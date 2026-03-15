@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>노트마켓 — 선배의 지식을 후배에게</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://js.tosspayments.com/v1/payment"></script>
+<style>
+:root{
+  --cream:#F7F3ED;--cream-d:#EDE7DC;--ink:#1A1714;--ink-s:#3D3830;--ink-m:#7A7168;
+  --a:#C8841A;--al:#F5C25A;--ab:#FEF5E2;
+  --teal:#1A6B5C;--teal-l:#E2F3EE;
+  --red:#C0392B;--red-l:#FDECEA;
+  --green:#2E7D32;--green-l:#EDF7EE;
+  --orange:#E65100;--orange-l:#FFF3E0;
+  --bd:rgba(26,23,20,.12);--shadow:0 2px 20px rgba(26,23,20,.08);--shadow-lg:0 8px 40px rgba(26,23,20,.14);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--cream);color:var(--ink);font-family:'Noto Sans KR',sans-serif;font-size:15px;line-height:1.7;min-height:100vh}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--cream-d)}::-webkit-scrollbar-thumb{background:var(--ink-m);border-radius:3px}
+nav{position:sticky;top:0;z-index:100;background:rgba(247,243,237,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);padding:0 5%;display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;cursor:pointer;letter-spacing:-.5px}
+.logo span{color:var(--a)}
+.nav-links{display:flex;align-items:center;gap:20px}
+.nl{color:var(--ink-s);font-size:14px;font-weight:500;cursor:pointer;transition:color .2s;background:none;border:none;font-family:inherit;padding:0}
+.nl:hover{color:var(--a)}
+.nav-btn{background:var(--ink);color:var(--cream);border:none;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:500;cursor:pointer;transition:background .2s;font-family:inherit}
+.nav-btn:hover{background:var(--a)}
+.nav-btn.ol{background:transparent;color:var(--ink);border:1.5px solid var(--bd)}
+.nav-btn.ol:hover{background:var(--cream-d)}
+.page{display:none}.page.active{display:block;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
+.btn-p{background:var(--ink);color:var(--cream)}.btn-p:hover{background:var(--a);transform:translateY(-1px)}
+.btn-s{background:transparent;color:var(--ink);border:1.5px solid var(--bd)}.btn-s:hover{border-color:var(--ink)}
+.btn-a{background:var(--a);color:var(--ink)}.btn-a:hover{background:var(--al)}
+.btn-d{background:var(--red);color:#fff}.btn-d:hover{opacity:.85}
+.btn-g{background:var(--green);color:#fff}.btn-g:hover{opacity:.85}
+.btn-sm{padding:5px 11px;font-size:12px;border-radius:7px}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.bl{background:var(--green-l);color:var(--green);border:1px solid #A5D6A7}
+.br{background:var(--red-l);color:var(--red);border:1px solid #FFCDD2}
+.bp{background:var(--orange-l);color:var(--orange);border:1px solid #FFCC80}
+.bs{background:var(--cream-d);color:var(--ink-m);border:1px solid var(--bd)}
+
+/* HERO */
+.hero{padding:80px 5% 60px;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;max-width:1100px;margin:0 auto}
+.hero h1{font-family:'Noto Serif KR',serif;font-size:42px;font-weight:700;line-height:1.25;letter-spacing:-1px;margin-bottom:18px}
+.hero h1 em{color:var(--a);font-style:normal}
+.hero-sub{color:var(--ink-m);font-size:16px;line-height:1.8;margin-bottom:32px}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap}
+.hero-stats{display:flex;gap:32px;margin-top:36px;padding-top:28px;border-top:1px solid var(--bd)}
+.stat-num{font-family:'Noto Serif KR',serif;font-size:26px;font-weight:700}
+.stat-label{font-size:12px;color:var(--ink-m);margin-top:2px}
+.hero-visual{position:relative;background:var(--ink);border-radius:20px;padding:28px;overflow:hidden}
+.hero-visual::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(200,132,26,.35),transparent 70%);border-radius:50%}
+.vis-title{color:var(--al);font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px}
+.ncp{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:16px;margin-bottom:10px;cursor:pointer;transition:background .2s}
+.ncp:hover{background:rgba(255,255,255,.12)}
+.ncp-top{display:flex;justify-content:space-between;margin-bottom:8px}
+.ncp-tag{font-size:10px;color:var(--al);background:rgba(200,132,26,.2);padding:2px 8px;border-radius:10px}
+.ncp-price{font-size:14px;font-weight:700;color:#fff}
+.ncp-title{color:#fff;font-size:14px;font-weight:500;margin-bottom:4px}
+.ncp-meta{color:rgba(255,255,255,.4);font-size:11px}
+.ncp-stars{color:var(--al);font-size:11px;margin-top:6px}
+.search-section{background:var(--ink);padding:48px 5%}
+.search-section h2{font-family:'Noto Serif KR',serif;color:#fff;font-size:24px;text-align:center;margin-bottom:24px}
+.search-box{max-width:800px;margin:0 auto;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:24px}
+.search-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.sl{display:block;font-size:11px;font-weight:600;color:rgba(255,255,255,.5);letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase}
+.si{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;padding:11px 14px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
+.si::placeholder{color:rgba(255,255,255,.35)}.si:focus{border-color:var(--al)}
+.search-btn{width:100%;background:var(--a);color:var(--ink);border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit}
+.search-btn:hover{background:var(--al)}
+.browse-hdr{padding:36px 5% 20px;max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.browse-hdr h2{font-family:'Noto Serif KR',serif;font-size:22px}
+.result-count{color:var(--ink-m);font-size:14px}
+.filter-bar{padding:0 5% 20px;max-width:1100px;margin:0 auto;display:flex;gap:8px;flex-wrap:wrap}
+.fchip{background:var(--cream-d);border:1px solid var(--bd);border-radius:20px;padding:6px 14px;font-size:13px;color:var(--ink-s);cursor:pointer;transition:all .2s}
+.fchip:hover,.fchip.active{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+.notes-grid{padding:0 5% 60px;max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.nc{background:#fff;border:1px solid var(--bd);border-radius:16px;overflow:hidden;transition:all .25s;cursor:pointer}
+.nc:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:transparent}
+.nc-thumb{height:110px;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;font-size:13px;line-height:1.5;font-weight:500}
+.nc-body{padding:16px}
+.nc-school{font-size:11px;font-weight:600;color:var(--a);letter-spacing:.5px;margin-bottom:6px}
+.nc-title{font-weight:600;font-size:15px;line-height:1.4;margin-bottom:6px}
+.nc-prof{font-size:12px;color:var(--ink-m);margin-bottom:12px}
+.nc-foot{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--bd)}
+.nc-seller{display:flex;align-items:center;gap:8px}
+.av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.nc-price{font-size:17px;font-weight:700}
+.nc-stars{font-size:11px;color:var(--a);margin-top:2px;text-align:right}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,23,20,.55);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;padding:24px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--cream);border-radius:20px;max-width:820px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:fadeUp .3s ease}
+.mhdr{background:var(--ink);padding:28px 32px 24px;border-radius:20px 20px 0 0;position:relative}
+.mclose{position:absolute;top:18px;right:20px;background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;font-family:inherit}
+.mclose:hover{background:rgba(255,255,255,.2)}
+.m-school{color:var(--al);font-size:12px;font-weight:600;margin-bottom:8px}
+.m-title{font-family:'Noto Serif KR',serif;font-size:22px;color:#fff;margin-bottom:6px}
+.m-prof{color:rgba(255,255,255,.55);font-size:14px}
+.mbody{padding:28px 32px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
+.ms-t{font-size:12px;font-weight:600;color:var(--ink-m);letter-spacing:.5px;margin-bottom:10px;text-transform:uppercase}
+.irow{display:flex;gap:10px;margin-bottom:8px;font-size:14px;color:var(--ink-s);align-items:flex-start}
+.prev-box{background:var(--ink);border-radius:12px;padding:20px;margin-bottom:24px}
+.prev-lbl{color:var(--al);font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px}
+.prev-txt{font-size:13px;color:rgba(255,255,255,.7);line-height:2;white-space:pre-wrap}
+.prev-blur{color:rgba(255,255,255,.18);filter:blur(3px);user-select:none;margin-top:12px;font-size:13px;line-height:2}
+.m-actions{display:flex;gap:12px}
+.btn-buy{flex:1;background:var(--a);color:var(--ink);border:none;border-radius:12px;padding:16px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit}
+.btn-buy:hover{background:var(--al);transform:translateY(-1px)}
+.btn-wl{background:transparent;color:var(--ink);border:1.5px solid var(--bd);border-radius:12px;padding:16px 18px;font-size:18px;cursor:pointer;transition:all .2s;font-family:inherit}
+.btn-wl:hover{border-color:var(--red);color:var(--red)}
+.btn-rpt{background:transparent;color:var(--ink-m);border:1.5px solid var(--bd);border-radius:12px;padding:14px 16px;font-size:13px;cursor:pointer;transition:all .2s;font-family:inherit}
+.btn-rpt:hover{border-color:var(--orange);color:var(--orange)}
+.rvs{margin-top:24px;padding-top:24px;border-top:1px solid var(--bd)}
+.rv-item{padding:14px 0;border-bottom:1px solid var(--bd)}
+.rv-item:last-child{border-bottom:none}
+.rv-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.rv-stars{color:var(--a);font-size:12px}
+.rv-txt{font-size:14px;color:var(--ink-s);line-height:1.6}
+.upload-wrap{max-width:700px;margin:0 auto;padding:48px 5%}
+.upload-wrap h2{font-family:'Noto Serif KR',serif;font-size:28px;margin-bottom:8px}
+.instant-badge{background:var(--green-l);border:1px solid #A5D6A7;border-radius:12px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:center;gap:12px;font-size:13px;color:var(--green)}
+.fg{margin-bottom:20px}
+.fl{display:block;font-size:13px;font-weight:600;color:var(--ink-s);margin-bottom:8px}
+.fl .req{color:var(--red)}
+.fi,.fs,.ft{width:100%;background:#fff;border:1.5px solid var(--bd);border-radius:10px;padding:12px 16px;font-size:15px;color:var(--ink);font-family:inherit;outline:none;transition:border-color .2s}
+.fi:focus,.fs:focus,.ft:focus{border-color:var(--a)}
+.ft{resize:vertical;min-height:120px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.drop-zone{border:2px dashed var(--bd);border-radius:14px;padding:40px;text-align:center;cursor:pointer;transition:all .2s;background:#fff}
+.drop-zone:hover{border-color:var(--a);background:var(--ab)}
+.earn-card{background:var(--teal-l);border-left:4px solid var(--teal);border-radius:10px;padding:16px 20px;margin-bottom:24px}
+.earn-card p{font-size:13px;color:var(--teal)}
+.earn-card strong{display:block;font-size:20px;font-weight:700;color:var(--teal);margin-top:4px}
+.price-display{background:var(--ab);border:1px solid var(--al);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:13px}
+.login-prompt{background:var(--ab);border:1px solid var(--al);border-radius:16px;padding:40px;text-align:center}
+.dash-wrap{max-width:1100px;margin:0 auto;padding:36px 5% 60px}
+.dash-hdr{margin-bottom:28px}
+.dash-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+.dsc{background:#fff;border:1px solid var(--bd);border-radius:14px;padding:20px}
+.dsc-icon{font-size:22px;margin-bottom:10px}
+.dsc-val{font-family:'Noto Serif KR',serif;font-size:26px;font-weight:700;letter-spacing:-.5px}
+.dsc-label{font-size:12px;color:var(--ink-m);margin-top:4px}
+.dash-panel{background:#fff;border:1px solid var(--bd);border-radius:16px;padding:24px;margin-bottom:20px}
+.dp-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.dp-title{font-size:16px;font-weight:600}
+.nr{display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--bd)}
+.nr:last-child{border-bottom:none}
+.nr-d{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.nr-i{flex:1;min-width:0}
+.nr-t{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nr-m{font-size:12px;color:var(--ink-m)}
+.nrs{text-align:center}
+.nrs-v{font-weight:700;font-size:15px}
+.nrs-l{color:var(--ink-m);font-size:11px}
+.admin-layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 60px)}
+.admin-sidebar{background:var(--ink);padding:28px 16px;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;display:flex;flex-direction:column}
+.a-sb-logo{font-size:11px;font-weight:600;color:rgba(255,255,255,.3);letter-spacing:1px;text-transform:uppercase;margin-bottom:20px;padding-left:8px}
+.anav{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;cursor:pointer;color:rgba(255,255,255,.55);font-size:14px;font-weight:500;transition:all .2s;margin-bottom:4px;user-select:none;position:relative}
+.anav:hover{background:rgba(255,255,255,.08);color:#fff}
+.anav.active{background:rgba(200,132,26,.2);color:var(--al)}
+.anav-b{margin-left:auto;background:var(--red);color:#fff;border-radius:20px;padding:0 5px;font-size:10px;font-weight:700}
+.acnt{padding:32px;background:#EFECE7;overflow-y:auto}
+.asec{display:none}.asec.active{display:block;animation:fadeUp .25s ease}
+.asec-title{font-family:'Noto Serif KR',serif;font-size:22px;margin-bottom:4px}
+.asec-sub{color:var(--ink-m);font-size:14px;margin-bottom:28px}
+.a-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.sc{background:#fff;border:1px solid var(--bd);border-radius:16px;padding:22px}
+.sc-icon{font-size:24px;margin-bottom:12px}
+.sc-val{font-family:'Noto Serif KR',serif;font-size:28px;font-weight:700;margin-bottom:4px;letter-spacing:-.5px}
+.sc-label{font-size:12px;color:var(--ink-m)}
+.sc-change{font-size:12px;margin-top:8px;font-weight:500}
+.sc-up{color:var(--green)}.sc-dn{color:var(--red)}
+.ap{background:#fff;border:1px solid var(--bd);border-radius:16px;padding:24px;margin-bottom:20px}
+.ap-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.ap-title{font-size:16px;font-weight:600}
+.ap-sub{font-size:13px;color:var(--ink-m);margin-top:2px}
+.at{width:100%;border-collapse:collapse}
+.at th{text-align:left;font-size:11px;font-weight:600;color:var(--ink-m);letter-spacing:.5px;text-transform:uppercase;padding:10px 12px;border-bottom:1px solid var(--bd);white-space:nowrap}
+.at td{padding:12px 12px;border-bottom:1px solid var(--bd);font-size:14px;vertical-align:middle}
+.at tr:last-child td{border-bottom:none}
+.at tr:hover td{background:var(--cream)}
+.at-acts{display:flex;gap:6px;flex-wrap:nowrap}
+.tm{color:var(--ink-m)}.tb{font-weight:600}
+.ftabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.ftab{background:var(--cream-d);border:1px solid var(--bd);border-radius:20px;padding:5px 13px;font-size:12px;color:var(--ink-s);cursor:pointer;transition:all .2s}
+.ftab:hover,.ftab.active{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+.bchart{display:flex;align-items:flex-end;gap:10px;height:160px;padding-bottom:28px;position:relative}
+.bchart::after{content:'';position:absolute;bottom:28px;left:0;right:0;height:1px;background:var(--bd)}
+.bc-col{display:flex;flex-direction:column;align-items:center;flex:1;gap:6px;height:100%;justify-content:flex-end}
+.bc-bar{width:100%;background:var(--a);border-radius:6px 6px 0 0;transition:height .6s ease;cursor:pointer;min-height:4px}
+.bc-bar:hover{opacity:.8}
+.bc-lbl{font-size:11px;color:var(--ink-m)}.bc-val{font-size:11px;color:var(--ink-s);font-weight:600}
+.rr{border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:10px}
+.rr-r{background:var(--orange-l);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--orange);margin-bottom:10px;border-left:3px solid var(--orange)}
+.settle-row{border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.empty-state{text-align:center;padding:60px 20px;color:var(--ink-m)}
+.toast{position:fixed;bottom:28px;right:28px;border-radius:12px;padding:14px 22px;font-size:14px;font-weight:500;z-index:400;transform:translateY(80px);opacity:0;transition:all .3s;box-shadow:var(--shadow-lg);max-width:360px}
+.toast.show{transform:translateY(0);opacity:1}
+.td{background:var(--ink);color:var(--cream)}.tok{background:var(--green);color:#fff}.terr{background:var(--red);color:#fff}.twarn{background:var(--orange);color:#fff}
+footer{background:var(--ink);color:rgba(255,255,255,.45);text-align:center;padding:28px;font-size:13px}
+footer a{color:var(--al);text-decoration:none}
+.loading{display:flex;align-items:center;justify-content:center;height:200px;color:var(--ink-m);font-size:14px}
+.loading::after{content:'';width:20px;height:20px;border:2px solid var(--bd);border-top-color:var(--a);border-radius:50%;animation:spin .8s linear infinite;margin-left:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.report-modal{background:var(--cream);border-radius:20px;max-width:460px;width:100%;padding:32px;box-shadow:var(--shadow-lg);animation:fadeUp .3s ease}
+.auth-modal{background:var(--cream);border-radius:20px;max-width:440px;width:100%;padding:36px;box-shadow:var(--shadow-lg);animation:fadeUp .3s ease}
+.auth-tabs{display:flex;background:var(--cream-d);border-radius:12px;padding:4px;margin-bottom:28px}
+.auth-tab{flex:1;text-align:center;padding:10px;border-radius:9px;cursor:pointer;font-size:14px;font-weight:500;transition:all .2s;color:var(--ink-m);user-select:none}
+.auth-tab.active{background:#fff;color:var(--ink);box-shadow:var(--shadow)}
+.aform{display:none}.aform.active{display:block}
+.auth-title{font-family:'Noto Serif KR',serif;font-size:22px;font-weight:700;margin-bottom:6px}
+.auth-sub{color:var(--ink-m);font-size:14px;margin-bottom:22px}
+.ai{width:100%;background:#fff;border:1.5px solid var(--bd);border-radius:10px;padding:13px 16px;font-size:15px;color:var(--ink);font-family:inherit;outline:none;transition:border-color .2s;margin-bottom:12px}
+.ai:focus{border-color:var(--a)}
+.auth-btn{width:100%;background:var(--ink);color:var(--cream);border:none;border-radius:10px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;transition:background .2s;font-family:inherit;margin-top:4px}
+.auth-btn:hover{background:var(--a)}
+.auth-hint{font-size:12px;color:var(--ink-m);text-align:center;margin-top:16px}
+.auth-hint b{color:var(--a);cursor:pointer}
+@media(max-width:768px){.hero{grid-template-columns:1fr;padding:40px 5%}.hero-visual{display:none}.search-row{grid-template-columns:1fr}.notes-grid{grid-template-columns:1fr 1fr}.mgrid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.nl.hide-sm{display:none}.admin-layout{grid-template-columns:1fr}.admin-sidebar{display:none}.a-stats,.dash-stats{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.notes-grid,.dash-stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo" onclick="go('home')">노트<span>마켓</span></div>
+  <div class="nav-links" id="nav-area"></div>
+</nav>
+
+<!-- HOME -->
+<div class="page active" id="page-home">
+  <section class="hero">
+    <div>
+      <div style="display:inline-block;background:var(--ab);color:var(--a);border:1px solid var(--al);border-radius:20px;padding:4px 14px;font-size:12px;font-weight:600;letter-spacing:.5px;margin-bottom:20px">🎓 대학생 지식 마켓플레이스</div>
+      <h1>선배의 노트가<br><em>후배의</em><br>합격을 만든다</h1>
+      <p class="hero-sub">내 학교·교수님·과목에 맞는 강의 정리 노트를 선배에게 구매하세요.</p>
+      <div class="hero-actions">
+        <button class="btn btn-p" onclick="go('browse')">노트 찾아보기</button>
+        <button class="btn btn-s" onclick="go('upload')">내 노트 판매하기</button>
+      </div>
+      <div class="hero-stats">
+        <div><div class="stat-num" id="h-notes">-</div><div class="stat-label">등록된 노트</div></div>
+        <div><div class="stat-num" id="h-sellers">-</div><div class="stat-label">판매 선배</div></div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="vis-title">인기 노트</div>
+      <div id="hero-prev"><div class="loading"></div></div>
+    </div>
+  </section>
+  <section class="search-section">
+    <h2>강의 노트 검색</h2>
+    <div class="search-box">
+      <div class="search-row">
+        <div><label class="sl">학교</label><input class="si" id="s-school" placeholder="예: 연세대학교"></div>
+        <div><label class="sl">학과</label><input class="si" id="s-dept" placeholder="예: 경영학과"></div>
+        <div><label class="sl">교수명 또는 과목명</label><input class="si" id="s-kw" placeholder="예: 재무관리"></div>
+      </div>
+      <button class="search-btn" onclick="doSearch()">🔍 노트 검색하기</button>
+    </div>
+  </section>
+  <section style="padding:52px 5%;max-width:1100px;margin:0 auto">
+    <h2 style="font-family:'Noto Serif KR',serif;font-size:22px;margin-bottom:24px">인기 학과별 노트</h2>
+    <div id="cat-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px"></div>
+  </section>
+  <footer><p>© 2025 노트마켓 &nbsp;·&nbsp; <a href="#">이용약관</a> &nbsp;·&nbsp; <a href="#">판매자 정책</a></p></footer>
+</div>
+
+<!-- BROWSE -->
+<div class="page" id="page-browse">
+  <div class="browse-hdr"><div><h2 id="browse-title">전체 노트</h2><div class="result-count" id="result-count"></div></div>
+  <select id="sort-sel" style="border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-size:13px;background:#fff;font-family:inherit;cursor:pointer" onchange="loadNotes()"><option value="latest">최신순</option><option value="popular">인기순</option><option value="priceLow">가격 낮은순</option></select></div>
+  <div class="filter-bar" id="filter-tabs">
+    <div class="fchip active" onclick="setFilter(this,'')">전체</div>
+    <div class="fchip" onclick="setFilter(this,'경영·경제')">경영·경제</div>
+    <div class="fchip" onclick="setFilter(this,'컴퓨터공학')">컴퓨터공학</div>
+    <div class="fchip" onclick="setFilter(this,'의학')">의학</div>
+    <div class="fchip" onclick="setFilter(this,'법학')">법학</div>
+    <div class="fchip" onclick="setFilter(this,'공학')">공학</div>
+  </div>
+  <div class="notes-grid" id="notes-grid"></div>
+  <footer><p>© 2025 노트마켓</p></footer>
+</div>
+
+<!-- UPLOAD -->
+<div class="page" id="page-upload"><div class="upload-wrap" id="upload-inner"></div><footer><p>© 2025 노트마켓</p></footer></div>
+
+<!-- SELLER DASHBOARD -->
+<div class="page" id="page-seller"><div class="dash-wrap" id="seller-inner"></div><footer><p>© 2025 노트마켓</p></footer></div>
+
+<!-- ADMIN -->
+<div class="page" id="page-admin">
+  <div class="admin-layout">
+    <div class="admin-sidebar">
+      <div class="a-sb-logo">관리자 패널</div>
+      <div class="anav active" id="anav-ov" onclick="showA('ov')"><span>📊</span>개요</div>
+      <div class="anav" id="anav-log" onclick="showA('log')"><span>🛒</span>구매 로그</div>
+      <div class="anav" id="anav-settle" onclick="showA('settle')"><span>💰</span>정산 관리</div>
+      <div class="anav" id="anav-rep" onclick="showA('rep')"><span>🚨</span>신고<span class="anav-b" id="rep-badge" style="display:none">0</span></div>
+      <div class="anav" id="anav-na" onclick="showA('na')"><span>📄</span>노트 관리</div>
+      <div class="anav" id="anav-users" onclick="showA('users')"><span>👥</span>사용자</div>
+      <div style="margin-top:auto;padding-top:24px;border-top:1px solid rgba(255,255,255,.1)">
+        <div class="anav" onclick="logout()"><span>🚪</span>로그아웃</div>
+      </div>
+    </div>
+    <div class="acnt">
+      <div class="asec active" id="a-ov"><div class="asec-title">대시보드</div><div class="asec-sub" id="admin-dt"></div><div class="a-stats" id="ov-stats"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:20px"><div class="ap"><div class="ap-hdr"><div><div class="ap-title">월별 수익</div></div></div><div class="bchart" id="rev-chart"></div></div><div class="ap"><div class="ap-hdr"><div class="ap-title">최근 신고</div><button class="btn btn-sm" onclick="showA('rep')">모두 보기</button></div><div id="ov-rep"></div></div></div></div>
+      <div class="asec" id="a-log"><div class="asec-title">구매 로그</div><div class="asec-sub">미정산 거래만 환불 처리 가능 (정산됐거나 이미 환불된 건은 불가)</div><div class="ftabs" id="log-ftabs"><div class="ftab active" onclick="setLF(this,'all')">전체</div><div class="ftab" onclick="setLF(this,'completed')">완료</div><div class="ftab" onclick="setLF(this,'refundable')">환불 가능</div><div class="ftab" onclick="setLF(this,'settled')">정산됨</div><div class="ftab" onclick="setLF(this,'refunded')">환불됨</div></div><input id="log-q" placeholder="구매자·노트명 검색" style="width:100%;border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:13px;background:#fff;margin-bottom:12px;font-family:inherit" oninput="loadLog()"><div class="ap" style="overflow-x:auto"><table class="at"><thead><tr><th>날짜</th><th>구매자</th><th>노트</th><th>판매자</th><th>결제액</th><th>수수료</th><th>정산액</th><th>상태</th><th>정산</th><th>환불</th></tr></thead><tbody id="log-tbody"></tbody></table></div></div>
+      <div class="asec" id="a-settle"><div class="asec-title">정산 관리</div><div class="asec-sub">거래일로부터 7일 경과 후 정산 가능 — 잠금 금액은 아직 7일이 지나지 않은 금액</div><div class="a-stats" id="settle-stats" style="grid-template-columns:repeat(3,1fr)"></div><div class="ap"><div class="ap-hdr"><div class="ap-title">판매자별 정산 현황</div></div><div id="settle-list"></div></div></div>
+      <div class="asec" id="a-rep"><div class="asec-title">신고 관리</div><div class="asec-sub">사용자가 신고한 노트를 검토하세요</div><div class="a-stats" id="rep-stats" style="grid-template-columns:repeat(3,1fr)"></div><div class="ap"><div class="ap-hdr"><div class="ap-title">신고 목록</div><select id="rep-filter" style="border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:13px;background:#fff;font-family:inherit" onchange="loadReports()"><option value="">전체</option><option value="pending">미처리</option><option value="resolved">처리됨</option></select></div><div id="rep-list"></div></div></div>
+      <div class="asec" id="a-na"><div class="asec-title">노트 관리</div><div class="asec-sub">관리자는 삭제된 노트를 포함한 모든 노트 열람·삭제 가능</div><div style="display:flex;gap:8px;margin-bottom:12px"><select id="note-sf" style="border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:13px;background:#fff;font-family:inherit" onchange="loadAdminNotes()"><option value="">전체</option><option value="live">게시중</option><option value="removed">삭제됨</option></select><input id="note-sq" placeholder="노트명 검색" style="flex:1;border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:13px;background:#fff;font-family:inherit" oninput="loadAdminNotes()"></div><div class="ap" style="overflow-x:auto"><table class="at"><thead><tr><th>노트</th><th>판매자</th><th>학교·과목</th><th>가격</th><th>상태</th><th>업로드</th><th>DL</th><th>신고</th><th>관리</th></tr></thead><tbody id="na-tbody"></tbody></table></div></div>
+      <div class="asec" id="a-users"><div class="asec-title">사용자 관리</div><div class="asec-sub">전체 회원 현황</div><div class="ap"><div class="ap-hdr"><div class="ap-title" id="ulbl">전체 사용자</div><input id="user-q" placeholder="이름·이메일 검색" style="border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:13px;background:#fff;font-family:inherit;width:180px" oninput="loadUsers()"></div><div style="overflow-x:auto"><table class="at"><thead><tr><th>이름</th><th>이메일</th><th>학교·학과</th><th>상태</th><th>가입일</th><th>판매</th><th>잔액</th><th>관리</th></tr></thead><tbody id="u-tbody"></tbody></table></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTE MODAL -->
+<div class="modal-overlay" id="modal-note" onclick="closeNM(event)">
+  <div class="modal">
+    <div class="mhdr"><button class="mclose" onclick="closeNM()">✕</button><div class="m-school" id="m-school"></div><div class="m-title" id="m-title"></div><div class="m-prof" id="m-prof"></div></div>
+    <div class="mbody">
+      <div id="m-admin-banner"></div>
+      <div class="mgrid">
+        <div><div class="ms-t">노트 정보</div><div class="irow">📄 <span id="m-pages"></span></div><div class="irow">📅 <span id="m-sem"></span></div><div class="irow">⭐ <span id="m-rating"></span></div><div class="irow">📦 <span id="m-sold"></span></div></div>
+        <div><div class="ms-t">판매자 정보</div><div class="irow">👤 <span id="m-seller"></span></div><div class="irow" style="align-items:flex-start">✏️ <span id="m-desc" style="font-size:13px;line-height:1.6"></span></div></div>
+      </div>
+      <div class="prev-box"><div class="prev-lbl">미리보기</div><div class="prev-txt" id="m-prev"></div><div class="prev-blur">····· 이하 내용은 구매 후 열람 가능 ·····<br>██████████ ████ ████████</div></div>
+      <div class="m-actions" id="m-acts"></div>
+      <div class="rvs"><div class="ms-t">구매자 리뷰</div><div id="m-rvs"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="modal-overlay" id="modal-rep" onclick="closeRepModal(event)">
+  <div class="report-modal">
+    <div style="font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;margin-bottom:6px">노트 신고</div>
+    <div style="color:var(--ink-m);font-size:14px;margin-bottom:20px" id="rep-nn"></div>
+    <div id="rep-opts" style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px"></div>
+    <textarea id="rep-detail" style="width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--ink);font-family:inherit;resize:vertical;min-height:80px;margin-bottom:14px;outline:none" placeholder="자세한 내용 (선택사항)"></textarea>
+    <div style="display:flex;gap:10px"><button class="btn" style="flex:1;background:var(--orange);color:#fff;border-color:var(--orange)" onclick="submitReport()">신고 제출</button><button class="btn btn-s" onclick="closeRepModal()">취소</button></div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="modal-auth" onclick="closeAM(event)">
+  <div class="auth-modal">
+    <div class="auth-tabs"><div class="auth-tab active" id="atab-login" onclick="switchA('login')">로그인</div><div class="auth-tab" id="atab-signup" onclick="switchA('signup')">회원가입</div></div>
+    <div class="aform active" id="aform-login">
+      <div class="auth-title">다시 오셨군요!</div><div class="auth-sub">노트마켓에 로그인하세요.</div>
+      <input class="ai" id="login-email" type="email" placeholder="이메일">
+      <input class="ai" id="login-pw" type="password" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="auth-btn" onclick="doLogin()">로그인</button>
+      <div class="auth-hint">계정이 없으신가요? <b onclick="switchA('signup')">회원가입</b></div>
+    </div>
+    <div class="aform" id="aform-signup">
+      <div class="auth-title">가입하기</div><div class="auth-sub">노트마켓 계정을 만들어보세요.</div>
+      <input class="ai" id="reg-name" placeholder="이름">
+      <input class="ai" id="reg-email" type="email" placeholder="이메일">
+      <input class="ai" id="reg-pw" type="password" placeholder="비밀번호 (6자 이상)">
+      <input class="ai" id="reg-school" placeholder="학교명">
+      <input class="ai" id="reg-dept" placeholder="학과명">
+      <button class="auth-btn" onclick="doSignup()">가입하기</button>
+      <div class="auth-hint">이미 계정이 있으신가요? <b onclick="switchA('login')">로그인</b></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast td" id="toast-el"></div>
+
+<script>
+// =====================================================
+// 설정 — 배포 후 여기 URL을 실제 서버 주소로 변경하세요
+// =====================================================
+const API = 'http://localhost:3000/api';
+// 배포 후: const API = 'https://[Railway URL]/api';
+
+let cur = null;
+let curNoteId = null;
+let activeDept = '';
+let logFilter = 'all';
+
+// 저장된 로그인 정보 불러오기
+function initAuth() {
+  const token = localStorage.getItem('nm_token');
+  const user  = localStorage.getItem('nm_user');
+  if (token && user) {
+    try { cur = JSON.parse(user); } catch {}
+  }
+}
+
+// API 호출 헬퍼
+async function api(path, options = {}) {
+  const token = localStorage.getItem('nm_token');
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(API + path, { ...options, headers });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '오류가 발생했어요.');
+  return data;
+}
+
+// ── 인증 ──
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pw    = document.getElementById('login-pw').value;
+  try {
+    const data = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password: pw }) });
+    localStorage.setItem('nm_token', data.token);
+    localStorage.setItem('nm_user', JSON.stringify(data.user));
+    cur = data.user;
+    closeAM(); updateNav(); toast(`반갑습니다, ${cur.name}님! 👋`, 'ok');
+    if (cur.role === 'admin') go('admin');
+  } catch (e) { toast(e.message, 'err'); }
+}
+async function doSignup() {
+  const name   = document.getElementById('reg-name').value.trim();
+  const email  = document.getElementById('reg-email').value.trim();
+  const pw     = document.getElementById('reg-pw').value;
+  const school = document.getElementById('reg-school').value.trim();
+  const dept   = document.getElementById('reg-dept').value.trim();
+  if (!name||!email||!pw||!school||!dept) { toast('모든 항목을 입력해주세요.','err'); return; }
+  try {
+    const data = await api('/auth/register', { method: 'POST', body: JSON.stringify({ email, password: pw, name, school, department: dept }) });
+    localStorage.setItem('nm_token', data.token);
+    localStorage.setItem('nm_user', JSON.stringify(data.user));
+    cur = data.user;
+    closeAM(); updateNav(); toast(`가입 완료! 환영합니다, ${name}님 🎉`, 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+}
+function logout() {
+  localStorage.removeItem('nm_token');
+  localStorage.removeItem('nm_user');
+  cur = null; updateNav(); go('home'); toast('로그아웃 되었어요.');
+}
+
+// ── NAV ──
+function updateNav() {
+  const a = document.getElementById('nav-area');
+  if (!cur) {
+    a.innerHTML = `<button class="nl hide-sm" onclick="go('browse')">노트 찾기</button><button class="nl hide-sm" onclick="go('upload')">노트 판매</button><button class="nav-btn ol" onclick="openAM('login')">로그인</button><button class="nav-btn" onclick="openAM('signup')">회원가입</button>`;
+  } else if (cur.role === 'admin') {
+    a.innerHTML = `<button class="nl" style="background:var(--ink);color:var(--cream);padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600" onclick="go('admin')">🛡 관리자 패널</button><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">${cur.name[0]}</div><span style="font-size:14px;font-weight:500">${cur.name}</span><button class="nav-btn ol" onclick="logout()">로그아웃</button></div>`;
+  } else {
+    a.innerHTML = `<button class="nl hide-sm" onclick="go('browse')">노트 찾기</button><button class="nl hide-sm" onclick="go('upload')">노트 판매</button><button class="nl hide-sm" onclick="go('seller')">내 판매현황</button><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">${cur.name[0]}</div><span style="font-size:14px;font-weight:500">${cur.name}</span><button class="nav-btn ol" onclick="logout()">로그아웃</button></div>`;
+  }
+}
+
+// ── 페이지 이동 ──
+function go(id) {
+  if (id === 'admin' && (!cur || cur.role !== 'admin')) { toast('관리자만 접근 가능해요.','err'); return; }
+  if (id === 'upload') renderUpload();
+  if (id === 'seller') { if (!cur) { openAM('login'); return; } loadSellerDash(); }
+  if (id === 'browse') loadNotes();
+  if (id === 'admin') { loadAdminDash(); loadLog(); loadSettle(); loadReports(); loadAdminNotes(); loadUsers(); updateRepBadge(); }
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── 홈 ──
+async function loadHome() {
+  try {
+    const data = await api('/notes?sort=popular');
+    const notes = data.notes || [];
+    document.getElementById('h-notes').textContent = notes.length;
+    const sellers = [...new Set(notes.map(n => n.seller_id))];
+    document.getElementById('h-sellers').textContent = sellers.length + '명';
+    document.getElementById('hero-prev').innerHTML = notes.slice(0, 3).map(n => `
+      <div onclick="openNote('${n.id}')" class="ncp">
+        <div class="ncp-top"><span class="ncp-tag">${n.school||''} · ${n.department||''}</span><span class="ncp-price">${Number(n.price).toLocaleString()}원</span></div>
+        <div class="ncp-title">${n.title}</div>
+        <div class="ncp-meta">${n.pages||'PDF'} · ${n.semester||''}</div>
+        <div class="ncp-stars">★ ${n.avg_rating > 0 ? Number(n.avg_rating).toFixed(1) : '-'} (${n.review_count}개 리뷰)</div>
+      </div>`).join('');
+    const cats = [{ic:'💼',k:'경영·경제'},{ic:'💻',k:'컴퓨터공학'},{ic:'⚗️',k:'자연과학'},{ic:'⚖️',k:'법학'}];
+    document.getElementById('cat-grid').innerHTML = cats.map(c => `
+      <div onclick="filterBrowse('${c.k}')" style="background:#fff;border:1px solid var(--bd);border-radius:14px;padding:20px;cursor:pointer;text-align:center;transition:all .2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+        <div style="font-size:28px;margin-bottom:10px">${c.ic}</div>
+        <div style="font-weight:600;font-size:14px">${c.k}</div>
+        <div style="color:var(--ink-m);font-size:12px;margin-top:4px">${notes.filter(n=>(n.department||'').includes(c.k)||(n.subject||'').includes(c.k)).length}개</div>
+      </div>`).join('');
+  } catch (e) {
+    document.getElementById('hero-prev').innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px;padding:20px 0">노트를 불러오는 중...</div>';
+  }
+}
+
+// ── 브라우즈 ──
+let browseParams = {};
+async function loadNotes() {
+  document.getElementById('notes-grid').innerHTML = '<div class="loading" style="grid-column:1/-1"></div>';
+  const sort = document.getElementById('sort-sel')?.value || 'latest';
+  const params = new URLSearchParams({ sort, ...browseParams });
+  try {
+    const data = await api('/notes?' + params);
+    const notes = data.notes || [];
+    document.getElementById('result-count').textContent = `총 ${notes.length}개`;
+    if (!notes.length) {
+      document.getElementById('notes-grid').innerHTML = '<div class="empty-state" style="grid-column:1/-1">🔍 검색 결과가 없어요.</div>';
+      return;
+    }
+    document.getElementById('notes-grid').innerHTML = notes.map(n => `
+      <div class="nc" onclick="openNote('${n.id}')">
+        <div class="nc-thumb" style="background:${n.color||'#C8841A'}18;color:${n.color||'#C8841A'}">${n.subject||n.title}<br><span style="font-size:11px;opacity:.6">${n.semester||''}</span></div>
+        <div class="nc-body">
+          <div class="nc-school">${n.school||''} · ${n.department||''}</div>
+          <div class="nc-title">${n.title}</div>
+          <div class="nc-prof">${n.professor||''} · ${n.pages||'PDF'}</div>
+          <div class="nc-foot">
+            <div class="nc-seller"><div class="av" style="background:${n.color||'#C8841A'}">${(n.seller_name||'?')[0]}</div><span style="font-size:12px;color:var(--ink-m)">${n.seller_name||''}</span></div>
+            <div><div class="nc-price" style="color:${n.color||'#C8841A'}">${Number(n.price).toLocaleString()}원</div><div class="nc-stars">★ ${n.avg_rating > 0 ? Number(n.avg_rating).toFixed(1) : '-'}</div></div>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch (e) { toast(e.message, 'err'); }
+}
+function setFilter(el, dept) {
+  activeDept = dept;
+  document.querySelectorAll('#filter-tabs .fchip').forEach(c => c.classList.toggle('active', c === el));
+  browseParams = dept ? { dept } : {};
+  document.getElementById('browse-title').textContent = dept ? `"${dept}" 노트` : '전체 노트';
+  loadNotes();
+}
+function filterBrowse(dept) {
+  activeDept = dept;
+  browseParams = { dept };
+  document.querySelectorAll('#filter-tabs .fchip').forEach(c => c.classList.toggle('active', c.textContent === dept));
+  document.getElementById('browse-title').textContent = `"${dept}" 노트`;
+  loadNotes(); go('browse');
+}
+function doSearch() {
+  const school = document.getElementById('s-school').value.trim();
+  const dept   = document.getElementById('s-dept').value.trim();
+  const kw     = document.getElementById('s-kw').value.trim();
+  browseParams = { school, dept, kw };
+  const q = [school, dept, kw].filter(Boolean).join(' · ');
+  document.getElementById('browse-title').textContent = q ? `"${q}" 검색 결과` : '전체 노트';
+  loadNotes(); go('browse');
+}
+
+// ── 노트 모달 ──
+async function openNote(id) {
+  curNoteId = id;
+  document.getElementById('modal-note').classList.add('open');
+  document.getElementById('m-title').textContent = '불러오는 중...';
+  document.getElementById('m-school').textContent = '';
+  document.getElementById('m-prof').textContent = '';
+  document.getElementById('m-acts').innerHTML = '';
+  document.getElementById('m-rvs').innerHTML = '<div class="loading"></div>';
+  document.body.style.overflow = 'hidden';
+  try {
+    const data = await api('/notes/' + id);
+    const n = data.note;
+    document.getElementById('m-school').textContent = `${n.school||''} · ${n.department||''}`;
+    document.getElementById('m-title').textContent = n.title;
+    document.getElementById('m-prof').textContent  = `${n.professor||''} · ${n.subject||''}`;
+    document.getElementById('m-pages').textContent = n.pages || 'PDF';
+    document.getElementById('m-sem').textContent   = n.semester || '-';
+    document.getElementById('m-rating').textContent = `★ ${n.avg_rating > 0 ? Number(n.avg_rating).toFixed(1) : '-'} (${n.review_count}개 리뷰)`;
+    document.getElementById('m-sold').textContent  = `${n.download_count}명 구매`;
+    document.getElementById('m-seller').textContent = n.seller_name || '-';
+    document.getElementById('m-desc').textContent  = n.description || '';
+    document.getElementById('m-prev').textContent  = n.preview_key ? '(미리보기 이미지는 실제 서비스에서 표시됩니다)' : n.description || '';
+
+    const adminBanner = document.getElementById('m-admin-banner');
+    if (cur?.role === 'admin' && n.status === 'removed') {
+      adminBanner.innerHTML = `<div style="background:var(--red-l);border:1px solid #FFCDD2;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--red);display:flex;align-items:center;gap:8px">🛡 관리자 뷰 — 삭제된 노트입니다 (일반 사용자에게 보이지 않음)</div>`;
+    } else adminBanner.innerHTML = '';
+
+    const acts = document.getElementById('m-acts');
+    if (cur?.role === 'admin') {
+      acts.innerHTML = `<span style="font-size:12px;color:var(--ink-m);background:var(--cream-d);padding:8px 12px;border-radius:10px">🛡 관리자 뷰</span>${n.status === 'live' ? `<button class="btn btn-sm btn-d" onclick="adminDelNote('${n.id}')">노트 삭제</button>` : '<span class="badge br">삭제됨</span>'}`;
+    } else {
+      acts.innerHTML = `<button class="btn-buy" onclick="buyNote()">구매 ${Number(n.price).toLocaleString()}원</button><button class="btn-wl" onclick="toast('찜 목록에 추가되었어요 ♡')">♡</button><button class="btn-rpt" onclick="openRepModal()">🚨 신고</button>`;
+    }
+
+    const reviews = typeof n.reviews === 'string' ? JSON.parse(n.reviews) : (n.reviews || []);
+    document.getElementById('m-rvs').innerHTML = reviews.length
+      ? reviews.map(r => `<div class="rv-item"><div class="rv-top"><span style="font-size:13px;font-weight:500">${r.name||'익명'}</span><span class="rv-stars">${'★'.repeat(r.rating||5)}</span></div><div class="rv-txt">${r.content||r.text||''}</div></div>`).join('')
+      : '<div style="color:var(--ink-m);font-size:14px;padding:16px 0">아직 리뷰가 없어요.</div>';
+  } catch (e) {
+    document.getElementById('m-title').textContent = '노트를 불러올 수 없어요.';
+    toast(e.message, 'err');
+  }
+}
+function closeNM(e) {
+  if (!e || e.target === document.getElementById('modal-note')) {
+    document.getElementById('modal-note').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+// ── 구매 ──
+async function buyNote() {
+  if (!cur) { closeNM(); openAM('login'); toast('구매하려면 먼저 로그인해주세요.'); return; }
+  try {
+    const order = await api('/payment/prepare', { method: 'POST', body: JSON.stringify({ noteId: curNoteId }) });
+    const toss = TossPayments(order.clientKey);
+    await toss.requestPayment('카드', {
+      amount: order.amount,
+      orderId: order.orderId,
+      orderName: order.orderName,
+      customerName: order.customerName,
+      successUrl: location.origin + '/payment-success.html',
+      failUrl:    location.origin + '/payment-fail.html',
+    });
+  } catch (e) { toast(e.message, 'err'); }
+}
+async function adminDelNote(id) {
+  if (!confirm('이 노트를 삭제하시겠어요?')) return;
+  try {
+    await api('/admin/notes/' + id, { method: 'DELETE' });
+    closeNM(); toast('노트가 삭제되었어요.', 'ok'); loadNotes(); loadHome();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ── 신고 모달 ──
+const RTYPES = [{v:'copyright',l:'저작권 침해'},{v:'lowquality',l:'설명과 다른 내용'},{v:'inappropriate',l:'부적절한 내용'},{v:'duplicate',l:'중복·도용'},{v:'other',l:'기타'}];
+function openRepModal() {
+  if (!cur) { closeNM(); openAM('login'); return; }
+  document.getElementById('rep-nn').textContent = '이 노트를 신고하는 이유를 선택해주세요.';
+  document.getElementById('rep-opts').innerHTML = RTYPES.map(t => `
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--bd);border-radius:10px;cursor:pointer">
+      <input type="radio" name="rtype" value="${t.v}" style="accent-color:var(--orange)">
+      <span style="font-size:14px;font-weight:500">${t.l}</span>
+    </label>`).join('');
+  document.getElementById('rep-detail').value = '';
+  document.getElementById('modal-rep').classList.add('open');
+}
+function closeRepModal(e) {
+  if (!e || e.target === document.getElementById('modal-rep')) document.getElementById('modal-rep').classList.remove('open');
+}
+async function submitReport() {
+  const type = document.querySelector('input[name="rtype"]:checked')?.value;
+  if (!type) { toast('신고 이유를 선택해주세요.', 'warn'); return; }
+  try {
+    await api('/notes/' + curNoteId + '/report', { method: 'POST', body: JSON.stringify({ type, detail: document.getElementById('rep-detail').value }) });
+    closeRepModal(); document.getElementById('modal-note').classList.remove('open'); document.body.style.overflow = '';
+    toast('신고가 접수되었어요.', 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ── 업로드 ──
+function renderUpload() {
+  const el = document.getElementById('upload-inner');
+  if (!cur) {
+    el.innerHTML = `<div class="login-prompt" style="margin:60px 0"><h3 style="font-family:'Noto Serif KR',serif;font-size:22px;margin-bottom:10px">로그인이 필요해요</h3><p style="color:var(--ink-m);margin-bottom:24px">노트를 판매하려면 먼저 로그인 또는 회원가입해주세요.</p><div style="display:flex;gap:12px;justify-content:center"><button class="btn btn-p" onclick="openAM('login')">로그인</button><button class="btn btn-s" onclick="openAM('signup')">회원가입</button></div></div>`;
+    return;
+  }
+  el.innerHTML = `
+    <h2>내 노트 판매하기</h2><p style="color:var(--ink-m);margin-bottom:28px">직접 작성한 강의 요약 노트를 등록하세요.</p>
+    <div class="instant-badge"><span>⚡</span><div><strong>즉시 게시</strong> — 업로드 즉시 공개됩니다. 저작권 위반 노트는 신고 시 삭제됩니다.</div></div>
+    <div class="earn-card"><p>예상 수익</p><strong id="earn-prev">판매가 입력 시 표시됩니다</strong></div>
+    <div class="fg"><label class="fl">학교 <span class="req">*</span></label><input class="fi" id="up-sc" value="${cur.school||''}" placeholder="연세대학교"></div>
+    <div class="form-row"><div class="fg"><label class="fl">학과 <span class="req">*</span></label><input class="fi" id="up-dt" value="${cur.department||''}" placeholder="경영학과"></div><div class="fg"><label class="fl">교수명 <span class="req">*</span></label><input class="fi" id="up-pf" placeholder="이재혁"></div></div>
+    <div class="fg"><label class="fl">과목명 <span class="req">*</span></label><input class="fi" id="up-sb" placeholder="재무관리"></div>
+    <div class="form-row"><div class="fg"><label class="fl">학기</label><select class="fs" id="up-sm"><option>2025년 1학기</option><option>2024년 2학기</option><option>2024년 1학기</option></select></div><div class="fg"><label class="fl">종류</label><select class="fs" id="up-tp"><option>중간고사 대비</option><option>기말고사 대비</option><option>중간+기말 전범위</option><option>단원별 요약</option></select></div></div>
+    <div class="fg"><label class="fl">판매 가격 (원) <span class="req">*</span></label><input class="fi" type="number" id="up-pr" placeholder="5000" min="1000" max="30000" step="500" oninput="calcEarn(this.value)"><div id="pdisplay" style="display:none;background:var(--ab);border:1px solid var(--al);border-radius:10px;padding:12px 16px;margin-top:10px;font-size:13px;display:none;justify-content:space-between"><span>수수료 20% 제외 정산액</span><strong id="earn-amt"></strong></div></div>
+    <div class="fg"><label class="fl">노트 소개 <span class="req">*</span></label><textarea class="ft" id="up-ds" placeholder="어떤 내용이 담겨있는지, 어떤 학생에게 도움이 될지 설명해주세요."></textarea></div>
+    <div class="fg"><label class="fl">PDF 파일 <span class="req">*</span></label><input type="file" accept=".pdf" id="up-file" style="width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;font-size:14px;background:#fff;font-family:inherit"></div>
+    <button class="btn btn-p" style="width:100%;padding:18px;font-size:16px;border-radius:12px;margin-top:8px" onclick="submitNote()">⚡ 즉시 게시하기</button>
+    <p style="font-size:12px;color:var(--ink-m);text-align:center;margin-top:14px">교수 강의자료 직접 전재 시 즉시 삭제됩니다.</p>`;
+}
+function calcEarn(v) {
+  const p = parseInt(v), pd = document.getElementById('pdisplay');
+  if (p >= 1000) {
+    pd.style.display = 'flex';
+    document.getElementById('earn-amt').textContent = Math.floor(p * .8).toLocaleString() + '원';
+    document.getElementById('earn-prev').textContent = `판매 1건당 ${Math.floor(p * .8).toLocaleString()}원`;
+  } else { pd.style.display = 'none'; document.getElementById('earn-prev').textContent = '판매가 입력 시 표시됩니다'; }
+}
+async function submitNote() {
+  const sc = document.getElementById('up-sc')?.value.trim();
+  const dt = document.getElementById('up-dt')?.value.trim();
+  const pf = document.getElementById('up-pf')?.value.trim();
+  const sb = document.getElementById('up-sb')?.value.trim();
+  const pr = parseInt(document.getElementById('up-pr')?.value);
+  const ds = document.getElementById('up-ds')?.value.trim();
+  const file = document.getElementById('up-file')?.files[0];
+  if (!sc||!dt||!pf||!sb||!pr||!ds) { toast('모든 필수 항목을 입력해주세요.', 'err'); return; }
+  if (!file) { toast('PDF 파일을 선택해주세요.', 'err'); return; }
+
+  try {
+    toast('PDF 업로드 중...');
+    // 1. 업로드 URL 발급
+    const { uploadUrl, key } = await api('/notes/upload-url', { method: 'POST', body: JSON.stringify({ filename: file.name }) });
+    // 2. R2에 직접 업로드
+    await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': 'application/pdf' } });
+    // 3. 노트 메타데이터 저장
+    const sm = document.getElementById('up-sm')?.value;
+    await api('/notes', { method: 'POST', body: JSON.stringify({ title: `${sb} ${sm} 정리 노트`, school: sc, department: dt, professor: pf + ' 교수', subject: sb, semester: sm, price: pr, description: ds, file_key: key }) });
+    toast('노트가 즉시 게시되었어요! ⚡', 'ok');
+    loadNotes(); go('seller');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ── 판매자 대시보드 ──
+async function loadSellerDash() {
+  document.getElementById('seller-inner').innerHTML = '<div class="loading"></div>';
+  try {
+    const data = await api('/notes/seller/dashboard');
+    const { notes, transactions, settleable_amount, locked_amount, balance } = data;
+    const totalDL  = (notes||[]).reduce((s, n) => s + (n.download_count||0), 0);
+    const totalEarned = (transactions||[]).reduce((s, t) => s + (t.net_amount||0), 0);
+    document.getElementById('seller-inner').innerHTML = `
+      <div class="dash-hdr"><h2 style="font-family:'Noto Serif KR',serif;font-size:26px;margin-bottom:4px">내 판매 현황</h2><p style="color:var(--ink-m);font-size:14px">${cur.school||''} · ${cur.department||''}</p></div>
+      <div class="dash-stats">
+        <div class="dsc"><div class="dsc-icon">📄</div><div class="dsc-val">${(notes||[]).filter(n=>n.status==='live').length}</div><div class="dsc-label">게시 중인 노트</div></div>
+        <div class="dsc"><div class="dsc-icon">💰</div><div class="dsc-val">${(totalEarned/10000).toFixed(1)}만원</div><div class="dsc-label">총 정산 수익</div></div>
+        <div class="dsc"><div class="dsc-icon">📦</div><div class="dsc-val">${totalDL}</div><div class="dsc-label">총 다운로드</div></div>
+        <div class="dsc"><div class="dsc-icon">💳</div><div class="dsc-val">${(balance||0).toLocaleString()}원</div><div class="dsc-label">정산 잔액</div></div>
+      </div>
+      <div class="dash-panel">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div style="background:var(--green-l);border:.5px solid #A5D6A7;border-radius:12px;padding:16px;text-align:center">
+            <div style="font-size:11px;color:var(--green);margin-bottom:4px">정산 가능 금액</div>
+            <div style="font-size:22px;font-weight:700;color:var(--green)">${(settleable_amount||0).toLocaleString()}원</div>
+            <div style="font-size:10px;color:var(--teal);margin-top:4px">거래일 7일 경과 금액</div>
+          </div>
+          <div style="background:var(--orange-l);border:.5px solid #FFCC80;border-radius:12px;padding:16px;text-align:center">
+            <div style="font-size:11px;color:var(--orange);margin-bottom:4px">잠금 금액 🔒</div>
+            <div style="font-size:22px;font-weight:700;color:var(--orange)">${(locked_amount||0).toLocaleString()}원</div>
+            <div style="font-size:10px;color:var(--orange);margin-top:4px">7일 미경과 (환불 가능 기간)</div>
+          </div>
+        </div>
+        ${(settleable_amount||0) > 0 ? `<button class="btn btn-g" style="width:100%" onclick="toast('정산 신청 기능은 관리자가 처리합니다.')">정산 신청하기 (${(settleable_amount||0).toLocaleString()}원)</button>` : '<div style="font-size:13px;color:var(--ink-m);text-align:center">정산 가능 금액이 없어요 (거래일로부터 7일 후 가능)</div>'}
+      </div>
+      <div class="dash-panel">
+        <div class="dp-hdr"><div class="dp-title">내 노트 목록</div><button class="btn btn-a" style="font-size:13px;padding:8px 16px" onclick="go('upload')">+ 새 노트</button></div>
+        ${!(notes||[]).length ? '<div class="empty-state">아직 등록한 노트가 없어요.</div>' : (notes||[]).map(n => {
+          const noteTxs = (transactions||[]).filter(t => t.note_id === n.id);
+          const ne = noteTxs.reduce((s, t) => s + (t.net_amount||0), 0);
+          return `<div class="nr"><div class="nr-d" style="background:${n.color||'#C8841A'}"></div><div class="nr-i"><div class="nr-t">${n.title}</div><div class="nr-m">${n.school||''} · ${Number(n.price).toLocaleString()}원 · <span class="badge ${n.status==='live'?'bl':'br'}">${n.status==='live'?'게시중':'삭제됨'}</span></div></div><div style="display:flex;gap:12px"><div class="nrs"><div class="nrs-v">${n.download_count||0}</div><div class="nrs-l">다운로드</div></div><div class="nrs"><div class="nrs-v">${ne.toLocaleString()}원</div><div class="nrs-l">수익</div></div></div></div>`;
+        }).join('')}
+      </div>
+      <div class="dash-panel">
+        <div class="dp-hdr"><div class="dp-title">최근 판매 내역</div></div>
+        ${!(transactions||[]).length ? '<div class="empty-state">판매 내역이 없어요.</div>' : (transactions||[]).slice(0,10).map(t =>
+          `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bd)"><div><div style="font-size:14px;font-weight:500">${t.note_title||t.noteName||'-'}</div><div style="font-size:12px;color:var(--ink-m)">${(t.created_at||t.date||'').slice(0,10)} · ${t.status==='refunded'?'환불됨':t.settled?'정산됨':'미정산'}</div></div><div style="font-size:15px;font-weight:700;color:${t.status==='refunded'?'var(--red)':t.settled?'var(--ink-m)':'var(--green)'}">+${(t.net_amount||t.net||0).toLocaleString()}원</div></div>`).join('')}
+      </div>`;
+  } catch (e) { document.getElementById('seller-inner').innerHTML = `<div class="empty-state">${e.message}</div>`; }
+}
+
+// ─────────────────────────────────────────
+// 관리자 패널
+// ─────────────────────────────────────────
+async function loadAdminDash() {
+  document.getElementById('admin-dt').textContent = new Date().toLocaleDateString('ko-KR', {year:'numeric',month:'long',day:'numeric',weekday:'long'}) + ' 기준';
+  try {
+    const { stats, monthly_revenue } = await api('/admin/dashboard');
+    document.getElementById('ov-stats').innerHTML = `
+      <div class="sc"><div class="sc-icon">👥</div><div class="sc-val">${stats.users}</div><div class="sc-label">총 사용자</div></div>
+      <div class="sc"><div class="sc-icon">📄</div><div class="sc-val">${stats.live_notes}</div><div class="sc-label">게시 노트</div><div class="sc-change sc-dn">삭제됨 ${stats.removed_notes}</div></div>
+      <div class="sc"><div class="sc-icon">🚨</div><div class="sc-val" style="color:${stats.pending_reports>0?'var(--red)':'inherit'}">${stats.pending_reports}</div><div class="sc-label">미처리 신고</div></div>
+      <div class="sc"><div class="sc-icon">💰</div><div class="sc-val">${(stats.total_revenue/10000).toFixed(1)}만</div><div class="sc-label">누적 수수료</div><div class="sc-change sc-up">정산대기 ${stats.total_settleable.toLocaleString()}원</div></div>`;
+    const rev = monthly_revenue || [];
+    const maxV = Math.max(...rev.map(m => m.fee), 1);
+    document.getElementById('rev-chart').innerHTML = rev.map(m => `
+      <div class="bc-col"><div class="bc-val">${m.fee>0?(m.fee/1000).toFixed(0)+'k':''}</div><div class="bc-bar" style="height:${Math.max(4, Math.round(m.fee/maxV*120))}px"></div><div class="bc-lbl">${m.month?.slice(5)||''}</div></div>`).join('');
+    // 최근 신고 로드
+    const repData = await api('/admin/reports?status=pending');
+    const reps = (repData.reports || []).slice(0, 3);
+    document.getElementById('ov-rep').innerHTML = reps.length
+      ? reps.map(r => `<div style="padding:10px 0;border-bottom:1px solid var(--bd)"><div style="font-weight:600;font-size:13px;margin-bottom:3px;cursor:pointer;color:var(--a)" onclick="openNote('${r.note_id}')">${r.note_title}</div><div style="font-size:11px;color:var(--ink-m)">${r.type} · ${(r.created_at||'').slice(0,10)}</div><div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-sm btn-d" onclick="processReport('${r.id}','delete_note')">삭제</button><button class="btn btn-sm" onclick="processReport('${r.id}','dismiss')">기각</button></div></div>`).join('')
+      : '<div style="color:var(--ink-m);font-size:14px;padding:12px 0">미처리 신고가 없어요 ✓</div>';
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// 구매 로그
+async function loadLog() {
+  document.getElementById('log-tbody').innerHTML = '<tr><td colspan="10" class="loading"></td></tr>';
+  const q = document.getElementById('log-q')?.value || '';
+  try {
+    const data = await api(`/admin/transactions?filter=${logFilter}&q=${encodeURIComponent(q)}`);
+    const txs = data.transactions || [];
+    document.getElementById('log-tbody').innerHTML = !txs.length
+      ? '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--ink-m)">데이터가 없어요</td></tr>'
+      : txs.map(t => `<tr>
+        <td class="tm">${(t.created_at||'').slice(0,10)}</td>
+        <td class="tb">${t.buyer_name||'-'}</td>
+        <td><span style="cursor:pointer;color:var(--a)" onclick="openNote('${t.note_id}')">${t.note_title||'-'}</span></td>
+        <td class="tm">${t.seller_name||'-'}</td>
+        <td class="tb">${Number(t.amount||0).toLocaleString()}원</td>
+        <td class="tm">${Number(t.fee||0).toLocaleString()}원</td>
+        <td style="color:${t.status==='refunded'?'var(--red)':'var(--green)'}">${t.status==='refunded'?'-':'+'}${Number(t.net_amount||0).toLocaleString()}원</td>
+        <td>${t.status==='refunded'?'<span class="badge br">환불됨</span>':t.settled?'<span class="badge bs">정산됨</span>':'<span class="badge bl">완료</span>'}</td>
+        <td>${t.settled?'<span class="badge bs">완료</span>':t.status==='refunded'?'-':t.is_locked?'<span class="badge bp">잠금 🔒</span>':'<span class="badge bl">가능</span>'}</td>
+        <td>${t.is_refundable?`<button class="btn btn-sm btn-d" onclick="doRefund('${t.id}')">환불</button>`:'<span style="font-size:11px;color:var(--ink-m)">-</span>'}</td>
+      </tr>`).join('');
+  } catch (e) { toast(e.message, 'err'); }
+}
+function setLF(el, f) { logFilter = f; document.querySelectorAll('#log-ftabs .ftab').forEach(c => c.classList.toggle('active', c === el)); loadLog(); }
+async function doRefund(txId) {
+  if (!confirm('이 거래를 환불 처리하시겠어요? 판매자 잔액에서 정산액이 차감됩니다.')) return;
+  try {
+    await api('/admin/transactions/' + txId + '/refund', { method: 'POST' });
+    toast('환불 처리되었어요.', 'ok'); loadLog(); loadSettle();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// 정산 관리
+async function loadSettle() {
+  try {
+    const { sellers } = await api('/admin/settlement');
+    const ts = sellers.reduce((s,u)=>s+Number(u.settleable||0),0);
+    const tl = sellers.reduce((s,u)=>s+Number(u.locked||0),0);
+    const tb = sellers.reduce((s,u)=>s+Number(u.balance||0),0);
+    document.getElementById('settle-stats').innerHTML = `
+      <div class="sc"><div class="sc-label">정산 가능 (전체)</div><div class="sc-val" style="color:var(--green)">${ts.toLocaleString()}원</div><div class="sc-change sc-up">7일 경과</div></div>
+      <div class="sc"><div class="sc-label">잠금 금액 (전체)</div><div class="sc-val" style="color:var(--orange)">${tl.toLocaleString()}원</div><div class="sc-change">7일 미경과</div></div>
+      <div class="sc"><div class="sc-label">판매자 잔액 합계</div><div class="sc-val">${tb.toLocaleString()}원</div></div>`;
+    document.getElementById('settle-list').innerHTML = !sellers.length
+      ? '<div class="empty-state">판매 이력이 있는 판매자가 없어요.</div>'
+      : sellers.map(u => `
+        <div class="settle-row">
+          <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px">${u.name}</div><div style="font-size:11px;color:var(--ink-m)">${u.school||''} · ${u.email}</div></div>
+          <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:var(--green)">${Number(u.settleable||0).toLocaleString()}원</div><div style="font-size:10px;color:var(--ink-m)">정산 가능</div></div>
+            <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:var(--orange)">${Number(u.locked||0).toLocaleString()}원</div><div style="font-size:10px;color:var(--ink-m)">잠금 🔒</div></div>
+            <div style="text-align:center"><div style="font-size:15px;font-weight:700">${Number(u.balance||0).toLocaleString()}원</div><div style="font-size:10px;color:var(--ink-m)">잔액</div></div>
+            ${Number(u.settleable||0)>0?`<button class="btn btn-sm btn-g" onclick="doSettle('${u.id}','${u.name}')">정산 처리</button>`:'<button class="btn btn-sm" disabled style="opacity:.4">정산 불가</button>'}
+          </div>
+        </div>`).join('');
+  } catch (e) { toast(e.message, 'err'); }
+}
+async function doSettle(uid, name) {
+  if (!confirm(`${name}님을 정산 처리하시겠어요?`)) return;
+  try {
+    const data = await api('/admin/settlement/' + uid + '/process', { method: 'POST' });
+    toast(`${name}님 ${data.settled_amount.toLocaleString()}원 정산 완료!`, 'ok'); loadSettle();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// 신고 관리
+async function loadReports() {
+  const status = document.getElementById('rep-filter')?.value || '';
+  try {
+    const data = await api('/admin/reports' + (status ? '?status=' + status : ''));
+    const reps = data.reports || [];
+    const pending = reps.filter(r => r.status === 'pending').length;
+    document.getElementById('rep-stats').innerHTML = `
+      <div class="sc"><div class="sc-label">전체 신고</div><div class="sc-val">${reps.length}</div></div>
+      <div class="sc"><div class="sc-label">미처리</div><div class="sc-val" style="color:${pending>0?'var(--red)':'inherit'}">${pending}</div></div>
+      <div class="sc"><div class="sc-label">처리됨</div><div class="sc-val" style="color:var(--green)">${reps.filter(r=>r.status!=='pending').length}</div></div>`;
+    document.getElementById('rep-list').innerHTML = !reps.length
+      ? '<div class="empty-state">신고 내역이 없어요</div>'
+      : reps.map(r => `
+        <div class="rr">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px">
+            <div>
+              <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px"><span class="badge ${r.status==='pending'?'bp':'bs'}">${r.status==='pending'?'미처리':'처리됨'}</span><span style="font-size:11px;color:var(--ink-m)">${(r.created_at||'').slice(0,10)}</span></div>
+              <div style="font-weight:600;font-size:14px;cursor:pointer;color:var(--a)" onclick="openNote('${r.note_id}')">${r.note_title}</div>
+              <div style="font-size:12px;color:var(--ink-m)">신고자: ${r.reporter_name}</div>
+            </div>
+          </div>
+          <div class="rr-r">🔍 ${r.type}</div>
+          ${r.detail ? `<div style="font-size:12px;color:var(--ink-m);margin-bottom:8px">"${r.detail}"</div>` : ''}
+          ${r.status==='pending' ? `<div style="display:flex;gap:8px"><button class="btn btn-sm btn-d" onclick="processReport('${r.id}','delete_note')">노트 삭제 + 처리</button><button class="btn btn-sm" onclick="processReport('${r.id}','dismiss')">신고 기각</button></div>` : '<div style="font-size:11px;color:var(--ink-m)">✓ 처리 완료</div>'}
+        </div>`).join('');
+    updateRepBadge();
+  } catch (e) { toast(e.message, 'err'); }
+}
+async function processReport(id, action) {
+  try {
+    await api('/admin/reports/' + id, { method: 'PATCH', body: JSON.stringify({ action }) });
+    toast(action === 'delete_note' ? '노트 삭제 + 신고 처리 완료' : '신고 기각 완료', 'ok');
+    loadReports(); loadAdminDash(); loadNotes(); loadHome(); updateRepBadge();
+  } catch (e) { toast(e.message, 'err'); }
+}
+async function updateRepBadge() {
+  try {
+    const data = await api('/admin/reports?status=pending');
+    const cnt = (data.reports || []).length;
+    const b = document.getElementById('rep-badge');
+    if (b) { b.textContent = cnt; b.style.display = cnt > 0 ? 'inline' : 'none'; }
+  } catch {}
+}
+
+// 노트 관리 (어드민)
+async function loadAdminNotes() {
+  const status = document.getElementById('note-sf')?.value || '';
+  const q = document.getElementById('note-sq')?.value || '';
+  try {
+    const data = await api('/admin/notes?' + new URLSearchParams({ status, q }));
+    const notes = data.notes || [];
+    document.getElementById('na-tbody').innerHTML = !notes.length
+      ? '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--ink-m)">데이터가 없어요</td></tr>'
+      : notes.map(n => `<tr>
+        <td class="tb"><span style="cursor:pointer;color:var(--a)" onclick="openNote('${n.id}')">${n.title}</span></td>
+        <td class="tm">${n.seller_name}</td>
+        <td class="tm" style="font-size:12px">${n.school||''} · ${n.subject||''}</td>
+        <td class="tb">${Number(n.price||0).toLocaleString()}원</td>
+        <td><span class="badge ${n.status==='live'?'bl':'br'}">${n.status==='live'?'게시중':'삭제됨'}</span></td>
+        <td class="tm">${(n.created_at||'').slice(0,10)}</td>
+        <td>${n.download_count||0}</td>
+        <td>${Number(n.pending_reports||0)>0?`<span class="badge bp">신고 ${n.pending_reports}</span>`:'<span style="font-size:11px;color:var(--ink-m)">없음</span>'}</td>
+        <td><div class="at-acts">${n.status==='live'?`<button class="btn btn-sm btn-d" onclick="adminDelNoteTable('${n.id}')">삭제</button>`:''}</div></td>
+      </tr>`).join('');
+  } catch (e) { toast(e.message, 'err'); }
+}
+async function adminDelNoteTable(id) {
+  if (!confirm('이 노트를 삭제하시겠어요?')) return;
+  try {
+    await api('/admin/notes/' + id, { method: 'DELETE' });
+    toast('삭제되었어요.', 'ok'); loadAdminNotes(); loadNotes(); loadHome();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// 사용자 관리
+async function loadUsers() {
+  const q = document.getElementById('user-q')?.value || '';
+  try {
+    const data = await api('/admin/users' + (q ? '?q=' + encodeURIComponent(q) : ''));
+    const users = data.users || [];
+    document.getElementById('ulbl').textContent = `전체 사용자 (${users.length}명)`;
+    document.getElementById('u-tbody').innerHTML = !users.length
+      ? '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--ink-m)">사용자가 없어요</td></tr>'
+      : users.map(u => `<tr>
+        <td class="tb">${u.name}</td>
+        <td class="tm" style="font-size:12px">${u.email}</td>
+        <td class="tm" style="font-size:12px">${u.school||'-'} ${u.department?'· '+u.department:''}</td>
+        <td><span class="badge ${u.status==='active'?'bl':'br'}">${u.status==='active'?'활성':'정지'}</span></td>
+        <td class="tm">${(u.created_at||'').slice(0,10)}</td>
+        <td>${u.sale_count||0}건</td>
+        <td>${Number(u.balance||0).toLocaleString()}원</td>
+        <td><div class="at-acts">
+          ${u.status==='active'?`<button class="btn btn-sm" onclick="changeUserStatus('${u.id}','suspended')">정지</button>`:`<button class="btn btn-sm btn-g" onclick="changeUserStatus('${u.id}','active')">활성화</button>`}
+        </div></td>
+      </tr>`).join('');
+  } catch (e) { toast(e.message, 'err'); }
+}
+async function changeUserStatus(id, status) {
+  try {
+    await api('/admin/users/' + id + '/status', { method: 'PATCH', body: JSON.stringify({ status }) });
+    toast(status === 'active' ? '계정을 활성화했어요.' : '계정을 정지했어요.', 'ok'); loadUsers();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function showA(tab) {
+  ['ov','log','settle','rep','na','users'].forEach(t => {
+    document.getElementById('a-'+t)?.classList.toggle('active', t === tab);
+    document.getElementById('anav-'+t)?.classList.toggle('active', t === tab);
+  });
+}
+
+// ── AUTH MODAL ──
+function openAM(tab) { switchA(tab); document.getElementById('modal-auth').classList.add('open'); document.body.style.overflow='hidden'; }
+function closeAM(e) { if (!e||e.target===document.getElementById('modal-auth')) { document.getElementById('modal-auth').classList.remove('open'); document.body.style.overflow=''; } }
+function switchA(tab) {
+  document.getElementById('atab-login').classList.toggle('active', tab==='login');
+  document.getElementById('atab-signup').classList.toggle('active', tab==='signup');
+  document.getElementById('aform-login').classList.toggle('active', tab==='login');
+  document.getElementById('aform-signup').classList.toggle('active', tab==='signup');
+}
+
+// ── TOAST ──
+let _tt = null;
+function toast(msg, type = 'd') {
+  const el = document.getElementById('toast-el');
+  el.textContent = msg; el.className = `toast t${type} show`;
+  if (_tt) clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeNM(); closeAM(); closeRepModal();
+    document.getElementById('modal-rep').classList.remove('open');
+  }
+});
+
+initAuth();
+updateNav();
+loadHome();
+</script>
+</body>
+</html>
