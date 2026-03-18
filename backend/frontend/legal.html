@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>노트마켓 — 법적 고지</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#F7F3ED;--cream-d:#EDE7DC;--ink:#1A1714;--ink-s:#3D3830;--ink-m:#7A7168;--a:#C8841A;--al:#F5C25A;--ab:#FEF5E2;--bd:rgba(26,23,20,.12);--green:#2E7D32;--green-l:#EDF7EE;--red:#C0392B;--red-l:#FDECEA}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--cream);color:var(--ink);font-family:'Noto Sans KR',sans-serif;font-size:15px;line-height:1.85}
+nav{background:var(--ink);padding:0 5%;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100}
+.logo{font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;color:#fff;cursor:pointer;text-decoration:none}
+.logo span{color:var(--al)}
+.nav-tabs{display:flex;gap:4px}
+.ntab{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:rgba(255,255,255,.55);transition:all .2s;border:none;background:none;font-family:inherit}
+.ntab:hover{color:#fff;background:rgba(255,255,255,.08)}
+.ntab.active{color:var(--al);background:rgba(200,132,26,.15)}
+.page{display:none}.page.active{display:block}
+.hero{background:var(--ink);padding:52px 5% 44px;text-align:center}
+.hero-tag{display:inline-block;background:rgba(200,132,26,.2);color:var(--al);border:1px solid rgba(200,132,26,.3);border-radius:20px;padding:4px 14px;font-size:12px;font-weight:500;letter-spacing:.5px;margin-bottom:16px}
+.hero h1{font-family:'Noto Serif KR',serif;font-size:30px;font-weight:700;color:#fff;margin-bottom:10px;letter-spacing:-.5px}
+.hero p{color:rgba(255,255,255,.45);font-size:14px}
+.content{max-width:780px;margin:0 auto;padding:48px 5% 80px}
+.section{margin-bottom:44px}
+.section h2{font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;color:var(--ink);margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--a);display:inline-block}
+.section h3{font-size:15px;font-weight:600;color:var(--ink-s);margin:20px 0 10px}
+.section p{color:var(--ink-s);font-size:14px;line-height:1.9;margin-bottom:10px}
+.section ul,.section ol{padding-left:22px;margin-bottom:10px}
+.section li{color:var(--ink-s);font-size:14px;line-height:1.9;margin-bottom:4px}
+.callout{border-radius:12px;padding:16px 20px;margin:20px 0;font-size:14px;line-height:1.75}
+.c-warn{background:var(--ab);border-left:4px solid var(--a);color:#5D3A00}
+.c-danger{background:var(--red-l);border-left:4px solid var(--red);color:#7B1A1A}
+.c-ok{background:var(--green-l);border-left:4px solid var(--green);color:#1B5E20}
+.info-box{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:20px 24px;margin:20px 0;font-size:14px;color:var(--ink-m);line-height:1.8}
+.info-box strong{color:var(--ink);display:block;margin-bottom:8px;font-size:15px}
+.tag-wrap{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.tag{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500}
+.tag-no{background:var(--red-l);color:var(--red);border:1px solid #FFCDD2}
+.tag-ok{background:var(--green-l);color:var(--green);border:1px solid #A5D6A7}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+th{background:var(--cream-d);padding:10px 14px;text-align:left;font-weight:600;color:var(--ink-m);font-size:12px;letter-spacing:.3px}
+td{padding:10px 14px;border-bottom:1px solid var(--bd);color:var(--ink-s);line-height:1.7}
+tr:last-child td{border-bottom:none}
+.updated{font-size:12px;color:var(--ink-m);margin-bottom:32px;padding:10px 14px;background:#fff;border-radius:8px;border:1px solid var(--bd);display:inline-block}
+footer{background:var(--ink);color:rgba(255,255,255,.4);text-align:center;padding:28px;font-size:13px}
+footer a{color:var(--al);text-decoration:none}
+@media(max-width:600px){.nav-tabs{gap:2px}.ntab{padding:6px 10px;font-size:12px}.hero h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="/">노트<span>마켓</span></a>
+  <div class="nav-tabs">
+    <button class="ntab active" onclick="showPage('terms',this)">이용약관</button>
+    <button class="ntab" onclick="showPage('privacy',this)">개인정보 처리방침</button>
+    <button class="ntab" onclick="showPage('seller',this)">판매자 가이드라인</button>
+  </div>
+</nav>
+
+<!-- ===== 이용약관 ===== -->
+<div class="page active" id="page-terms">
+  <div class="hero">
+    <div class="hero-tag">TERMS OF SERVICE</div>
+    <h1>이용약관</h1>
+    <p>노트마켓 서비스를 이용하시기 전에 반드시 읽어주세요.</p>
+  </div>
+  <div class="content">
+    <div class="updated">최종 업데이트: 2025년 1월 1일</div>
+
+    <div class="section">
+      <h2>제1조 목적</h2>
+      <p>본 약관은 노트마켓(이하 "회사")이 운영하는 온라인 강의 노트 마켓플레이스 서비스(이하 "서비스")의 이용조건 및 절차, 회사와 이용자 간의 권리·의무 및 책임사항을 규정함을 목적으로 합니다.</p>
+    </div>
+
+    <div class="section">
+      <h2>제2조 용어의 정의</h2>
+      <ul>
+        <li><strong>"서비스"</strong>란 회사가 운영하는 강의 노트 중개 플랫폼 및 관련 서비스를 의미합니다.</li>
+        <li><strong>"이용자"</strong>란 본 약관에 따라 서비스를 이용하는 모든 회원을 의미합니다.</li>
+        <li><strong>"판매자"</strong>란 서비스를 통해 강의 노트를 등록하고 판매하는 이용자를 의미합니다.</li>
+        <li><strong>"구매자"</strong>란 서비스를 통해 강의 노트를 구매하는 이용자를 의미합니다.</li>
+        <li><strong>"콘텐츠"</strong>란 판매자가 서비스에 등록한 강의 노트, 요약본, PDF 파일 등 일체를 의미합니다.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>제3조 약관의 효력 및 변경</h2>
+      <p>본 약관은 서비스 화면에 게시하거나 기타 방법으로 이용자에게 공지함으로써 효력이 발생합니다. 회사는 관련 법령에 위반되지 않는 범위에서 본 약관을 변경할 수 있으며, 변경된 약관은 공지 후 7일 이후부터 효력이 발생합니다.</p>
+    </div>
+
+    <div class="section">
+      <h2>제4조 회원가입 및 자격</h2>
+      <p>이용자는 회사가 정한 양식에 따라 정보를 기입하고 본 약관에 동의함으로써 회원가입을 신청할 수 있습니다.</p>
+      <div class="callout c-warn">⚠️ 타인의 정보를 사용하거나 허위 정보로 가입한 경우 서비스 이용이 제한될 수 있으며, 이로 인한 모든 책임은 해당 이용자에게 있습니다.</div>
+    </div>
+
+    <div class="section">
+      <h2>제5조 서비스 이용</h2>
+      <h3>회사의 역할</h3>
+      <p>회사는 판매자와 구매자 간의 거래를 중개하는 플랫폼을 제공합니다. 회사는 콘텐츠의 직접적인 제작자가 아니며, 콘텐츠의 품질·정확성·완전성에 대해 보증하지 않습니다.</p>
+      <h3>이용자의 의무</h3>
+      <ul>
+        <li>관련 법령 및 본 약관의 규정을 준수해야 합니다.</li>
+        <li>서비스를 이용하여 타인의 권리를 침해하거나 불법적인 행위를 해서는 안 됩니다.</li>
+        <li>서비스의 정상적인 운영을 방해하는 행위를 해서는 안 됩니다.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>제6조 저작권 및 지적재산권</h2>
+      <div class="callout c-danger">🚨 <strong>중요</strong> — 교수의 강의 자료, 교재, 시험 문제 등 타인의 저작물을 무단으로 복제·배포하는 행위는 저작권법에 위반될 수 있습니다. 이로 인한 모든 법적 책임은 해당 판매자에게 있으며, 회사는 이에 대한 책임을 지지 않습니다.</div>
+      <ul>
+        <li>판매자가 등록한 콘텐츠의 저작권은 원칙적으로 판매자에게 있습니다.</li>
+        <li>판매자는 자신이 등록하는 콘텐츠가 타인의 저작권을 침해하지 않음을 보증합니다.</li>
+        <li>저작권 침해 신고가 접수된 콘텐츠는 즉시 삭제될 수 있습니다.</li>
+        <li>구매자는 구매한 콘텐츠를 개인 학습 목적으로만 사용해야 하며, 재배포·재판매는 금지됩니다.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>제7조 결제 및 환불</h2>
+      <h3>결제</h3>
+      <p>서비스 내 모든 결제는 토스페이먼츠를 통해 처리됩니다. 결제 금액, 방법 등은 서비스 화면에서 확인할 수 있습니다.</p>
+      <h3>정산</h3>
+      <p>판매자의 수익은 거래일로부터 7일 경과 후 정산 신청이 가능합니다. 플랫폼 수수료는 판매 금액의 20%입니다.</p>
+      <h3>환불</h3>
+      <ul>
+        <li>결제 후 7일 이내 미정산 상태의 경우 환불 신청이 가능합니다.</li>
+        <li>다운로드가 완료된 경우에는 원칙적으로 환불이 제한됩니다.</li>
+        <li>콘텐츠 설명과 현저히 다른 경우 관리자 검토 후 환불 처리될 수 있습니다.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>제8조 서비스 중단 및 이용 제한</h2>
+      <p>회사는 다음의 경우 서비스 이용을 제한하거나 계정을 삭제할 수 있습니다.</p>
+      <ul>
+        <li>타인의 저작권을 침해하는 콘텐츠를 등록한 경우</li>
+        <li>허위 정보를 제공하거나 타인의 정보를 도용한 경우</li>
+        <li>서비스의 정상적인 운영을 방해한 경우</li>
+        <li>관련 법령 또는 본 약관을 위반한 경우</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>제9조 면책사항</h2>
+      <div class="callout c-warn">⚠️ 회사는 판매자가 제공하는 콘텐츠의 내용, 품질, 저작권 등에 대해 보증하지 않습니다. 콘텐츠로 인한 학업 성과 등에 대해서도 책임을 지지 않습니다.</div>
+      <ul>
+        <li>천재지변, 전쟁, 시스템 장애 등 불가항력으로 인한 서비스 중단</li>
+        <li>이용자의 귀책 사유로 발생한 손해</li>
+        <li>이용자 간 거래에서 발생한 분쟁</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>제10조 분쟁 해결</h2>
+      <p>서비스 이용과 관련하여 분쟁이 발생한 경우, 회사와 이용자는 상호 협의하여 해결하도록 노력합니다. 협의가 이루어지지 않을 경우 관련 법령에 따라 처리됩니다. 본 약관은 대한민국 법률에 따라 규율됩니다.</p>
+      <div class="info-box">
+        <strong>문의처</strong>
+        서비스 이용 관련 문의: admin@notemarket.kr<br>
+        저작권 침해 신고: admin@notemarket.kr (제목에 "[저작권 침해 신고]" 기재)
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 개인정보 처리방침 ===== -->
+<div class="page" id="page-privacy">
+  <div class="hero">
+    <div class="hero-tag">PRIVACY POLICY</div>
+    <h1>개인정보 처리방침</h1>
+    <p>노트마켓은 이용자의 개인정보를 소중히 보호합니다.</p>
+  </div>
+  <div class="content">
+    <div class="updated">최종 업데이트: 2025년 1월 1일</div>
+
+    <div class="callout c-ok" style="margin-bottom:32px">✅ 노트마켓은 개인정보보호법 및 관련 법령을 준수하며, 이용자의 개인정보를 안전하게 보호하기 위해 최선을 다합니다.</div>
+
+    <div class="section">
+      <h2>제1조 수집하는 개인정보</h2>
+      <table>
+        <thead>
+          <tr><th>수집 항목</th><th>수집 목적</th><th>보유 기간</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>이메일 주소, 비밀번호</td><td>회원가입, 본인 확인, 로그인</td><td>회원 탈퇴 시까지</td></tr>
+          <tr><td>이름</td><td>서비스 이용, 판매자/구매자 식별</td><td>회원 탈퇴 시까지</td></tr>
+          <tr><td>학교, 학과</td><td>맞춤형 서비스 제공, 노트 검색</td><td>회원 탈퇴 시까지</td></tr>
+          <tr><td>결제 정보 (토스페이먼츠 처리)</td><td>결제 처리 및 환불</td><td>전자상거래법에 따라 5년</td></tr>
+          <tr><td>서비스 이용 기록, 접속 로그</td><td>서비스 개선, 부정 이용 방지</td><td>1년</td></tr>
+        </tbody>
+      </table>
+      <div class="callout c-warn">⚠️ 비밀번호는 암호화(bcrypt)되어 저장되며, 어떠한 경우에도 평문으로 확인할 수 없습니다.</div>
+    </div>
+
+    <div class="section">
+      <h2>제2조 개인정보의 이용 목적</h2>
+      <ul>
+        <li>회원 가입 및 관리, 본인 확인</li>
+        <li>서비스 제공, 콘텐츠 배포</li>
+        <li>결제 처리 및 정산</li>
+        <li>고객 문의 응대 및 분쟁 처리</li>
+        <li>서비스 개선 및 신규 서비스 개발</li>
+        <li>법령 및 약관 위반 행위 방지</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>제3조 개인정보의 제3자 제공</h2>
+      <p>회사는 원칙적으로 이용자의 개인정보를 외부에 제공하지 않습니다. 다만 다음의 경우는 예외입니다.</p>
+      <ul>
+        <li>이용자가 사전에 동의한 경우</li>
+        <li>법령에 의거하거나 수사기관의 요청이 있는 경우</li>
+      </ul>
+      <h3>개인정보 처리 위탁</h3>
+      <table>
+        <thead>
+          <tr><th>수탁업체</th><th>위탁 업무</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>토스페이먼츠</td><td>결제 처리 및 결제 정보 관리</td></tr>
+          <tr><td>Supabase</td><td>데이터베이스 운영 및 관리</td></tr>
+          <tr><td>Cloudflare</td><td>파일 저장 및 CDN 서비스</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>제4조 개인정보의 보유 및 파기</h2>
+      <p>회사는 개인정보 수집 및 이용목적이 달성된 후에는 해당 정보를 지체 없이 파기합니다.</p>
+      <h3>파기 절차</h3>
+      <ul>
+        <li>회원 탈퇴 시 즉시 삭제 처리됩니다.</li>
+        <li>전자적 파일 형태는 복구 불가능한 방법으로 영구 삭제합니다.</li>
+        <li>법령에 의해 보존이 필요한 경우 별도 보관 후 기간 만료 시 삭제합니다.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>제5조 이용자의 권리</h2>
+      <p>이용자는 언제든지 다음과 같은 권리를 행사할 수 있습니다.</p>
+      <ul>
+        <li><strong>열람권</strong>: 자신의 개인정보 처리 현황을 열람할 수 있습니다.</li>
+        <li><strong>정정·삭제권</strong>: 개인정보가 잘못되었거나 불필요한 경우 정정 또는 삭제를 요청할 수 있습니다.</li>
+        <li><strong>처리 정지권</strong>: 개인정보의 처리 정지를 요청할 수 있습니다.</li>
+        <li><strong>탈퇴권</strong>: 언제든지 회원 탈퇴를 통해 개인정보 삭제를 요청할 수 있습니다.</li>
+      </ul>
+      <div class="info-box">
+        <strong>개인정보 관련 문의 및 요청</strong>
+        이메일: admin@notemarket.kr<br>
+        응답 기간: 요청일로부터 10일 이내
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>제6조 쿠키 및 자동 수집 정보</h2>
+      <p>서비스는 로그인 상태 유지를 위해 localStorage를 사용합니다. 이는 브라우저에 저장되며 이용자가 직접 삭제할 수 있습니다.</p>
+    </div>
+
+    <div class="section">
+      <h2>제7조 개인정보 보호책임자</h2>
+      <div class="info-box">
+        <strong>개인정보 보호책임자</strong>
+        소속: 노트마켓 운영팀<br>
+        이메일: admin@notemarket.kr<br>
+        개인정보 침해 신고: 개인정보보호위원회 (privacy.go.kr) / 국번없이 182
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 판매자 가이드라인 ===== -->
+<div class="page" id="page-seller">
+  <div class="hero">
+    <div class="hero-tag">SELLER GUIDELINES</div>
+    <h1>판매자 가이드라인</h1>
+    <p>건강한 노트 거래 문화를 위한 필수 규칙입니다.</p>
+  </div>
+  <div class="content">
+    <div class="updated">최종 업데이트: 2025년 1월 1일</div>
+
+    <div class="callout c-ok" style="margin-bottom:32px">📚 노트마켓은 학생이 직접 작성한 강의 정리 노트를 판매하는 플랫폼입니다. 본 가이드라인을 준수하지 않으면 노트가 삭제되거나 계정이 정지될 수 있습니다.</div>
+
+    <div class="section">
+      <h2>판매 가능한 콘텐츠</h2>
+      <div class="tag-wrap">
+        <span class="tag tag-ok">✓ 본인이 직접 작성한 강의 필기</span>
+        <span class="tag tag-ok">✓ 본인이 직접 정리한 요약 노트</span>
+        <span class="tag tag-ok">✓ 교수 설명을 본인 언어로 재정리</span>
+        <span class="tag tag-ok">✓ 본인이 만든 개념 정리, 마인드맵</span>
+        <span class="tag tag-ok">✓ 본인의 풀이 과정이 담긴 문제 풀이</span>
+      </div>
+
+      <h2 style="margin-top:28px">판매 불가 콘텐츠</h2>
+      <div class="callout c-danger">🚨 아래 항목을 위반할 경우 즉시 삭제 처리되며, 반복 위반 시 계정이 영구 정지됩니다. 저작권법에 따른 법적 책임은 판매자 본인에게 있습니다.</div>
+      <div class="tag-wrap">
+        <span class="tag tag-no">✗ 교수 강의 자료 직접 스캔·업로드</span>
+        <span class="tag tag-no">✗ 교재·참고서 내용 그대로 복사</span>
+        <span class="tag tag-no">✗ 시험 문제 원본 업로드</span>
+        <span class="tag tag-no">✗ 타인의 노트 무단 재배포</span>
+        <span class="tag tag-no">✗ 허위·과장된 설명</span>
+        <span class="tag tag-no">✗ 성인·불법 콘텐츠</span>
+        <span class="tag tag-no">✗ 타 학생의 개인정보 포함 자료</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>노트 등록 기준</h2>
+      <h3>제목 작성</h3>
+      <ul>
+        <li>과목명, 교수명, 학기를 명확히 포함해주세요.</li>
+        <li>예시: "재무관리 (이재혁 교수) 2024-2 기말 정리"</li>
+        <li>과장된 표현(예: "완벽 족보", "100% 적중") 사용 금지</li>
+      </ul>
+      <h3>설명 작성</h3>
+      <ul>
+        <li>노트에 포함된 내용을 구체적으로 설명해야 합니다.</li>
+        <li>총 페이지 수, 다루는 범위, 특징 등을 기재해주세요.</li>
+        <li>실제 내용과 다른 설명은 환불 사유가 될 수 있습니다.</li>
+      </ul>
+      <h3>가격 책정</h3>
+      <ul>
+        <li>최소 1,000원 ~ 최대 30,000원 범위 내에서 설정 가능합니다.</li>
+        <li>노트의 분량과 품질에 맞는 합리적인 가격을 권장합니다.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>저작권 가이드</h2>
+      <div class="info-box">
+        <strong>이런 경우는 괜찮아요 ✓</strong>
+        교수님이 설명한 내용을 <u>본인의 언어로 새롭게 정리</u>한 경우, 개념을 이해하고 <u>본인이 직접 도식화</u>한 경우, 수업을 들으며 <u>본인이 직접 필기</u>한 내용을 정리한 경우
+      </div>
+      <div class="info-box" style="border-color:#FFCDD2">
+        <strong>이런 경우는 안 돼요 ✗</strong>
+        교수님 PPT를 <u>그대로 스캔</u>하거나 <u>사진 찍어</u> 올리는 경우, 교재 내용을 <u>그대로 타이핑</u>해서 올리는 경우, 다른 학생의 노트를 <u>허락 없이 재판매</u>하는 경우
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>정산 규정</h2>
+      <table>
+        <thead>
+          <tr><th>항목</th><th>내용</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>플랫폼 수수료</td><td>판매 금액의 20%</td></tr>
+          <tr><td>판매자 정산액</td><td>판매 금액의 80%</td></tr>
+          <tr><td>정산 가능 시점</td><td>거래일로부터 7일 경과 후</td></tr>
+          <tr><td>정산 방법</td><td>관리자를 통한 수동 정산</td></tr>
+          <tr><td>환불 가능 기간</td><td>거래일로부터 7일 이내 (미정산 상태)</td></tr>
+        </tbody>
+      </table>
+      <div class="callout c-warn">⚠️ 저작권 침해, 허위 콘텐츠 등으로 인해 노트가 강제 삭제된 경우 해당 거래의 정산은 보류될 수 있습니다.</div>
+    </div>
+
+    <div class="section">
+      <h2>제재 기준</h2>
+      <table>
+        <thead>
+          <tr><th>위반 사항</th><th>조치</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>교수 자료 직접 업로드 (1회)</td><td>즉시 노트 삭제 + 경고</td></tr>
+          <tr><td>교수 자료 직접 업로드 (2회 이상)</td><td>계정 영구 정지</td></tr>
+          <tr><td>허위·과장 설명으로 신고 접수</td><td>노트 삭제 + 해당 거래 환불</td></tr>
+          <tr><td>타인 노트 무단 재배포</td><td>즉시 노트 삭제 + 계정 정지</td></tr>
+          <tr><td>부정 리뷰 조작</td><td>계정 정지</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>문의 및 이의 신청</h2>
+      <div class="info-box">
+        <strong>판매자 지원</strong>
+        노트 삭제 또는 계정 제재에 이의가 있는 경우 admin@notemarket.kr로 문의해주세요.<br>
+        제목에 "[이의 신청]"을 기재하고, 관련 내용을 상세히 설명해 주시면 7일 이내에 검토 후 답변드립니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>© 2025 노트마켓 &nbsp;·&nbsp; <a href="#">이용약관</a> &nbsp;·&nbsp; <a href="#">개인정보 처리방침</a> &nbsp;·&nbsp; <a href="#">판매자 가이드라인</a></p>
+  <p style="margin-top:8px">문의: admin@notemarket.kr</p>
+</footer>
+
+<script>
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.ntab').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>

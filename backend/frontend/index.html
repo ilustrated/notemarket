@@ -328,6 +328,14 @@ footer a{color:var(--al);text-decoration:none}
   <footer><p>© 2025 노트마켓</p></footer>
 </div>
 
+<footer>
+  <p>© 2025 노트마켓 &nbsp;·&nbsp;
+    <a href="/legal.html">이용약관</a> &nbsp;·&nbsp;
+    <a href="/legal.html?tab=privacy">개인정보 처리방침</a> &nbsp;·&nbsp;
+    <a href="/legal.html?tab=seller">판매자 가이드라인</a>
+  </p>
+</footer>
+
 <!-- NOTE MODAL -->
 <div class="modal-overlay" id="modal-note" onclick="closeNM(event)">
   <div class="modal">
@@ -382,11 +390,13 @@ footer a{color:var(--al);text-decoration:none}
 
 <div class="toast td" id="toast-el"></div>
 
-<script>
+<script>git add .
+git commit -m "API 주소 Railway로 변경"
+git push
 // =====================================================
 // 설정 — 배포 후 여기 URL을 실제 서버 주소로 변경하세요
 // =====================================================
-const API = 'https://notemarket-production.up.railway.app/api';
+API = 'https://notemarket-production.up.railway.app/api';
 // 배포 후: const API = 'https://[Railway URL]/api';
 
 let cur = null;
