@@ -319,6 +319,15 @@ footer a{color:var(--al);text-decoration:none}
   </div>
 </div>
 
+<!-- SELLER PROFILE PAGE -->
+<div class="page" id="page-seller-profile">
+  <div style="max-width:900px;margin:0 auto;padding:36px 5% 60px">
+    <button class="btn btn-s btn-sm" onclick="goBack()" style="margin-bottom:20px">← 뒤로가기</button>
+    <div id="seller-profile-inner"><div class="loading"></div></div>
+  </div>
+  <footer><p>© 2025 노트마켓</p></footer>
+</div>
+
 <!-- NOTE MODAL -->
 <div class="modal-overlay" id="modal-note" onclick="closeNM(event)">
   <div class="modal">
@@ -377,7 +386,7 @@ footer a{color:var(--al);text-decoration:none}
 // =====================================================
 // 설정 — 배포 후 여기 URL을 실제 서버 주소로 변경하세요
 // =====================================================
-const API = 'https://notemarket-production.up.railway.app/api';
+const API = 'http://localhost:3000/api';
 // 배포 후: const API = 'https://[Railway URL]/api';
 
 let cur = null;
@@ -458,6 +467,7 @@ function go(id) {
   if (id === 'seller') { if (!cur) { openAM('login'); return; } loadSellerDash(); }
   if (id === 'browse') loadNotes();
   if (id === 'admin') { loadAdminDash(); loadLog(); loadSettle(); loadReports(); loadAdminNotes(); loadUsers(); updateRepBadge(); }
+  // seller-profile 은 openSellerProfile() 에서 직접 로드
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   window.scrollTo(0, 0);
@@ -563,7 +573,9 @@ async function openNote(id) {
     document.getElementById('m-sem').textContent   = n.semester || '-';
     document.getElementById('m-rating').textContent = `★ ${n.avg_rating > 0 ? Number(n.avg_rating).toFixed(1) : '-'} (${n.review_count}개 리뷰)`;
     document.getElementById('m-sold').textContent  = `${n.download_count}명 구매`;
-    document.getElementById('m-seller').textContent = n.seller_name || '-';
+    document.getElementById('m-seller').innerHTML = n.seller_id
+      ? '<span onclick="openSellerProfile(\'' + n.seller_id + '\')" style="cursor:pointer;color:var(--a);text-decoration:underline;font-weight:500">' + (n.seller_name||'-') + '</span>'
+      : (n.seller_name||'-');
     document.getElementById('m-desc').textContent  = n.description || '';
     document.getElementById('m-prev').textContent  = n.preview_key ? '(미리보기 이미지는 실제 서비스에서 표시됩니다)' : n.description || '';
 
@@ -964,6 +976,66 @@ function switchA(tab) {
   document.getElementById('atab-signup').classList.toggle('active', tab==='signup');
   document.getElementById('aform-login').classList.toggle('active', tab==='login');
   document.getElementById('aform-signup').classList.toggle('active', tab==='signup');
+}
+
+
+// -- 판매자 프로필 --
+let prevPage = 'browse';
+function goBack() { go(prevPage); }
+
+async function openSellerProfile(sellerId) {
+  if (!sellerId) return;
+  closeNM();
+  prevPage = document.querySelector('.page.active')?.id?.replace('page-','') || 'browse';
+  go('seller-profile');
+  const el = document.getElementById('seller-profile-inner');
+  el.innerHTML = '<div class="loading"></div>';
+  try {
+    const data = await api('/notes/seller/' + sellerId + '/profile');
+    const { seller, notes, stats } = data;
+    const joinYear = (seller.created_at||'').slice(0,4);
+    const avgRating = Number(stats.avg_rating||0) > 0 ? Number(stats.avg_rating).toFixed(1) : '-';
+    const noteCards = notes.map(function(n) {
+      const rating = Number(n.avg_rating||0) > 0 ? Number(n.avg_rating).toFixed(1) : '-';
+      const filledStars = Number(n.avg_rating||0) > 0 ? Math.round(Number(n.avg_rating)) : 0;
+      const stars = '★'.repeat(filledStars) + '☆'.repeat(5-filledStars);
+      return '<div onclick="openNote(\''+n.id+'\');" style="background:#fff;border:1px solid var(--bd);border-radius:14px;overflow:hidden;cursor:pointer;transition:all .2s" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.boxShadow=\'var(--shadow-lg)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'">'+
+        '<div style="height:90px;background:'+(n.color||'#C8841A')+'18;color:'+(n.color||'#C8841A')+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;text-align:center;padding:10px">'+(n.subject||n.title)+'<br><span style="font-size:10px;opacity:.6">'+(n.semester||'')+'</span></div>'+
+        '<div style="padding:12px">'+
+          '<div style="font-size:10px;color:var(--a);font-weight:600;margin-bottom:4px">'+(n.school||'')+' · '+(n.department||'')+'</div>'+
+          '<div style="font-weight:600;font-size:13px;line-height:1.4;margin-bottom:6px">'+n.title+'</div>'+
+          '<div style="display:flex;align-items:center;justify-content:space-between">'+
+            '<div style="font-size:14px;color:'+(n.color||'#C8841A')+';font-weight:700">'+Number(n.price||0).toLocaleString()+'원</div>'+
+            '<div style="font-size:11px"><span style="color:var(--a)">'+stars+'</span><span style="color:var(--ink-m);margin-left:3px">'+rating+' ('+n.review_count+')</span></div>'+
+          '</div>'+
+          '<div style="font-size:11px;color:var(--ink-m);margin-top:4px">다운로드 '+(n.download_count||0)+'회</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+
+    el.innerHTML =
+      '<div style="display:flex;align-items:center;gap:18px;background:#fff;border:1px solid var(--bd);border-radius:16px;padding:24px;margin-bottom:20px">'+
+        '<div style="width:64px;height:64px;border-radius:50%;background:var(--a);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;flex-shrink:0">'+(seller.name||'?')[0]+'</div>'+
+        '<div style="flex:1">'+
+          '<div style="font-family:Noto Serif KR,serif;font-size:22px;font-weight:700;margin-bottom:4px">'+seller.name+'</div>'+
+          '<div style="font-size:14px;color:var(--ink-m)">'+(seller.school||'')+' '+(seller.department?'· '+seller.department:'')+'</div>'+
+          '<div style="font-size:12px;color:var(--ink-m);margin-top:4px">'+joinYear+'년 가입</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:20px;text-align:center">'+
+          '<div><div style="font-size:20px;font-weight:700">'+(stats.note_count||0)+'</div><div style="font-size:11px;color:var(--ink-m)">노트</div></div>'+
+          '<div><div style="font-size:20px;font-weight:700">'+(stats.total_downloads||0)+'</div><div style="font-size:11px;color:var(--ink-m)">다운로드</div></div>'+
+          '<div><div style="font-size:20px;font-weight:700;color:var(--a)">★ '+avgRating+'</div><div style="font-size:11px;color:var(--ink-m)">평균 평점</div></div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="font-size:16px;font-weight:600;margin-bottom:14px">'+seller.name+'님의 노트 ('+notes.length+'개)</div>'+
+      (notes.length === 0
+        ? '<div style="text-align:center;padding:40px;color:var(--ink-m)">아직 등록한 노트가 없어요.</div>'
+        : '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">'+noteCards+'</div>'
+      );
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink-m)">프로필을 불러올 수 없어요.</div>';
+    toast(e.message, 'err');
+  }
 }
 
 // ── TOAST ──

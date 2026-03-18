@@ -1,13 +1,10 @@
 const express  = require('express');
-const multer   = require('multer');
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { db, authenticate, requireAdmin } = require('../middleware/auth');
 const router = express.Router();
 
-const upload = multer({ storage: multer.memoryStorage() });
-
-const https = require('https');
+// Cloudflare R2 클라이언트 설정
 const r2 = new S3Client({
   region: 'auto',
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -15,11 +12,7 @@ const r2 = new S3Client({
     accessKeyId: process.env.R2_ACCESS_KEY_ID,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
   },
-  requestHandler: {
-    httpsAgent: new https.Agent({ rejectUnauthorized: false })
-  }
 });
-
 
 // ── 노트 목록 조회 (검색/필터) ──
 // GET /api/notes?school=&dept=&kw=&sort=latest&page=1
@@ -115,23 +108,21 @@ router.get('/:id', async (req, res) => {
 
 // ── PDF 업로드 URL 발급 ──
 // POST /api/notes/upload-url
-router.post('/upload', authenticate, upload.single('file'), async (req, res) => {
+router.post('/upload-url', authenticate, async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: '파일을 선택해주세요.' });
-    
-    const key = `notes/${req.user.id}/${Date.now()}_${req.file.originalname}`;
-    
-    await r2.send(new PutObjectCommand({
+    const { filename } = req.body;
+    const key = `notes/${req.user.id}/${Date.now()}_${filename || 'note.pdf'}`;
+
+    const uploadUrl = await getSignedUrl(r2, new PutObjectCommand({
       Bucket: process.env.R2_PRIVATE_BUCKET,
       Key: key,
-      Body: req.file.buffer,
       ContentType: 'application/pdf',
-    }));
+    }), { expiresIn: 600 }); // 10분 유효
 
-    res.json({ key });
+    res.json({ uploadUrl, key });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: '파일 업로드 실패: ' + err.message });
+    res.status(500).json({ error: 'Upload URL 발급 실패.' });
   }
 });
 
@@ -311,4 +302,52 @@ router.get('/seller/dashboard', authenticate, async (req, res) => {
   }
 });
 
+// ── 판매자 프로필 조회 ──
+// GET /api/notes/seller/:sellerId/profile
+router.get('/seller/:sellerId/profile', async (req, res) => {
+  try {
+    const { sellerId } = req.params;
+
+    // 판매자 기본 정보
+    const seller = await db.query(
+      `SELECT id, name, school, department, created_at FROM users WHERE id = $1 AND status = 'active'`,
+      [sellerId]
+    );
+    if (!seller.rows[0]) return res.status(404).json({ error: '판매자를 찾을 수 없어요.' });
+
+    // 판매자의 게시 중인 노트 목록 + 평점
+    const notes = await db.query(`
+      SELECT n.*,
+        COALESCE(AVG(r.rating), 0) AS avg_rating,
+        COUNT(DISTINCT r.id) AS review_count
+      FROM notes n
+      LEFT JOIN reviews r ON r.note_id = n.id
+      WHERE n.seller_id = $1 AND n.status = 'live'
+      GROUP BY n.id
+      ORDER BY n.download_count DESC
+    `, [sellerId]);
+
+    // 판매자 총 통계
+    const stats = await db.query(`
+      SELECT
+        COUNT(DISTINCT n.id) AS note_count,
+        COALESCE(SUM(n.download_count), 0) AS total_downloads,
+        COALESCE(AVG(r.rating), 0) AS avg_rating
+      FROM notes n
+      LEFT JOIN reviews r ON r.note_id = n.id
+      WHERE n.seller_id = $1 AND n.status = 'live'
+    `, [sellerId]);
+
+    res.json({
+      seller: seller.rows[0],
+      notes: notes.rows,
+      stats: stats.rows[0],
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '서버 오류가 발생했어요.' });
+  }
+});
+
 module.exports = router;
+
