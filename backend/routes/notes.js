@@ -1,10 +1,12 @@
 const express  = require('express');
+const multer   = require('multer');
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { db, authenticate, requireAdmin } = require('../middleware/auth');
 const router = express.Router();
 
-// Cloudflare R2 클라이언트 설정
+const upload = multer({ storage: multer.memoryStorage() });
+
 const r2 = new S3Client({
   region: 'auto',
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -108,21 +110,23 @@ router.get('/:id', async (req, res) => {
 
 // ── PDF 업로드 URL 발급 ──
 // POST /api/notes/upload-url
-router.post('/upload-url', authenticate, async (req, res) => {
+router.post('/upload', authenticate, upload.single('file'), async (req, res) => {
   try {
-    const { filename } = req.body;
-    const key = `notes/${req.user.id}/${Date.now()}_${filename || 'note.pdf'}`;
-
-    const uploadUrl = await getSignedUrl(r2, new PutObjectCommand({
+    if (!req.file) return res.status(400).json({ error: '파일을 선택해주세요.' });
+    
+    const key = `notes/${req.user.id}/${Date.now()}_${req.file.originalname}`;
+    
+    await r2.send(new PutObjectCommand({
       Bucket: process.env.R2_PRIVATE_BUCKET,
       Key: key,
+      Body: req.file.buffer,
       ContentType: 'application/pdf',
-    }), { expiresIn: 600 }); // 10분 유효
+    }));
 
-    res.json({ uploadUrl, key });
+    res.json({ key });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Upload URL 발급 실패.' });
+    res.status(500).json({ error: '파일 업로드 실패: ' + err.message });
   }
 });
 
