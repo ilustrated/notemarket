@@ -7,6 +7,7 @@ const router = express.Router();
 
 const upload = multer({ storage: multer.memoryStorage() });
 
+const https = require('https');
 const r2 = new S3Client({
   region: 'auto',
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -14,7 +15,11 @@ const r2 = new S3Client({
     accessKeyId: process.env.R2_ACCESS_KEY_ID,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
   },
+  requestHandler: {
+    httpsAgent: new https.Agent({ rejectUnauthorized: false })
+  }
 });
+
 
 // ── 노트 목록 조회 (검색/필터) ──
 // GET /api/notes?school=&dept=&kw=&sort=latest&page=1
