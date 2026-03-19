@@ -118,4 +118,19 @@ router.get('/my', authenticate, async (req, res) => {
   }
 });
 
+// ── NicePay 콜백 (결제 후 NicePay가 POST로 호출) ──
+// POST /api/payment/nicepay-callback
+router.post('/nicepay-callback', (req, res) => {
+  const { authResultCode, authResultMsg, tid, orderId, amount, authToken } = req.body;
+  const params = new URLSearchParams({
+    authResultCode: authResultCode || '',
+    authResultMsg: authResultMsg || '',
+    tid: tid || '',
+    orderId: orderId || '',
+    amount: amount || 0,
+    authToken: authToken || '',
+  });
+  res.redirect(303, `/payment-success.html?${params.toString()}`);
+});
+
 module.exports = router;
