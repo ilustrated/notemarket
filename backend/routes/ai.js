@@ -5,7 +5,7 @@ const { db, authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || 'AIzaSyB9aMGr3I3uhsW7l2V_TAqDLmWhqRdVxyY');
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 // R2 공개 URL로 파일 읽기
 async function getFileFromR2(key) {
