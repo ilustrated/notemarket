@@ -38,8 +38,8 @@ async function initTables() {
   const { db } = require('./middleware/auth');
   await db.query(`CREATE TABLE IF NOT EXISTS grade_badges (
     id SERIAL PRIMARY KEY,
-    note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-    seller_id INTEGER NOT NULL REFERENCES users(id),
+    note_id INTEGER NOT NULL,
+    seller_id INTEGER NOT NULL,
     screenshot_key TEXT NOT NULL,
     grade TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
@@ -48,15 +48,15 @@ async function initTables() {
   )`);
   await db.query(`CREATE TABLE IF NOT EXISTS study_group_members (
     id SERIAL PRIMARY KEY,
-    note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-    user_id INTEGER NOT NULL REFERENCES users(id),
+    note_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
     contact TEXT,
     joined_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(note_id, user_id)
   )`);
   await db.query(`CREATE TABLE IF NOT EXISTS exam_analyses (
     id SERIAL PRIMARY KEY,
-    note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+    note_id INTEGER NOT NULL,
     analysis TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
   )`);
