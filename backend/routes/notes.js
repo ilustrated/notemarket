@@ -203,36 +203,7 @@ router.get('/:id/purchase-check', authenticate, async (req, res) => {
   }
 });
 
-// ── 파일 다운로드 URL 발급 (구매자/판매자/관리자) ──
-// GET /api/notes/:id/file-url  (AI Q&A용 프리사인드 URL 반환)
-router.get('/:id/file-url', authenticate, async (req, res) => {
-  try {
-    const [txRes, noteRes] = await Promise.all([
-      db.query("SELECT id FROM transactions WHERE note_id=$1 AND buyer_id=$2 AND status='completed'", [req.params.id, req.user.id]),
-      db.query('SELECT file_key, seller_id FROM notes WHERE id=$1', [req.params.id]),
-    ]);
-    const note = noteRes.rows[0];
-    if (!note) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
-    if (!txRes.rows[0] && note.seller_id !== req.user.id && req.user.role !== 'admin')
-      return res.status(403).json({ error: '구매한 노트에만 접근할 수 있어요.' });
-
-    const presignedUrl = await getSignedUrl(r2, new GetObjectCommand({
-      Bucket: process.env.R2_PRIVATE_BUCKET,
-      Key: note.file_key,
-    }), { expiresIn: 300 });
-
-    const ext = note.file_key.split('.').pop().toLowerCase();
-    const imgTypes = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp' };
-    const mimeType = ext === 'pdf' ? 'application/pdf' : (imgTypes[ext] || 'application/octet-stream');
-
-    res.json({ url: presignedUrl, mimeType });
-  } catch (err) {
-    console.error('File URL error:', err);
-    res.status(500).json({ error: 'URL 생성 중 오류가 발생했어요.' });
-  }
-});
-
-// ── 파일 다운로드 (브라우저가 R2에 직접 접속 — 서버는 리디렉트만) ──
+// ── 파일 다운로드 (SDK로 R2에서 직접 읽어 클라이언트로 스트리밍) ──
 // GET /api/notes/:id/download  (Authorization 헤더 또는 ?token= 쿼리 파라미터)
 router.get('/:id/download', async (req, res) => {
   try {
@@ -251,7 +222,6 @@ router.get('/:id/download', async (req, res) => {
     if (!noteRes.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
     const { file_key, title, seller_id } = noteRes.rows[0];
 
-    // 구매자, 판매자, 관리자만 다운로드 가능
     const tx = await db.query(
       "SELECT id FROM transactions WHERE note_id=$1 AND buyer_id=$2 AND status='completed'",
       [req.params.id, userId]
@@ -262,17 +232,25 @@ router.get('/:id/download', async (req, res) => {
     const ext = file_key.split('.').pop().toLowerCase();
     const filename = encodeURIComponent(title + '.' + ext);
 
-    // ResponseContentDisposition으로 파일명 지정, 브라우저가 R2에 직접 접속
-    const presignedUrl = await getSignedUrl(r2, new GetObjectCommand({
+    // presigned URL 없이 SDK로 직접 R2에서 파일 읽기
+    const sdkRes = await r2.send(new GetObjectCommand({
       Bucket: process.env.R2_PRIVATE_BUCKET,
       Key: file_key,
-      ResponseContentDisposition: `attachment; filename*=UTF-8''${filename}`,
-    }), { expiresIn: 300 });
+    }));
 
-    res.redirect(presignedUrl);
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
+    res.setHeader('Content-Type', sdkRes.ContentType || 'application/octet-stream');
+    if (sdkRes.ContentLength) res.setHeader('Content-Length', String(sdkRes.ContentLength));
+
+    // Body를 청크 단위로 읽어서 응답
+    const chunks = [];
+    for await (const chunk of sdkRes.Body) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    res.end(Buffer.concat(chunks));
   } catch (err) {
     console.error('Download error:', err);
-    res.status(500).json({ error: '서버 오류가 발생했어요.' });
+    if (!res.headersSent) res.status(500).json({ error: '다운로드 실패: ' + err.message });
   }
 });
 

@@ -1343,37 +1343,12 @@ function purchaseAI(noteId, noteTitle) {
 
 // ── AI Q&A ──
 let _qaCurrentNoteId = null;
-let _qaFileBuffer = null;
-let _qaFileMime = null;
-
-async function openQA(noteId, noteTitle) {
+function openQA(noteId, noteTitle) {
   _qaCurrentNoteId = noteId;
-  _qaFileBuffer = null;
-  _qaFileMime = null;
   document.getElementById('qa-note-title').textContent = noteTitle;
-  document.getElementById('qa-body').innerHTML = '<div class="qa-bubble qa-ai">📂 노트 파일을 불러오는 중...</div>';
+  document.getElementById('qa-body').innerHTML = '<div class="qa-bubble qa-ai">안녕하세요! 이 노트에 대해 궁금한 점이 있으면 무엇이든 물어보세요. 📚</div>';
   document.getElementById('qa-input').value = '';
-  document.getElementById('qa-input').disabled = true;
-  document.getElementById('qa-send-btn').disabled = true;
   document.getElementById('modal-qa').classList.add('open');
-
-  try {
-    // 1. 서버에서 presigned URL 받기 (서버는 로컬 서명만, 네트워크 없음)
-    const { url, mimeType } = await api('/notes/' + noteId + '/file-url');
-    // 2. 브라우저가 R2에 직접 접속 (유효한 SSL 인증서)
-    const r2Res = await fetch(url);
-    if (!r2Res.ok) throw new Error('파일 다운로드 실패 (' + r2Res.status + ')');
-    _qaFileBuffer = await r2Res.arrayBuffer();
-    _qaFileMime = mimeType;
-    document.getElementById('qa-body').innerHTML = '<div class="qa-bubble qa-ai">안녕하세요! 이 노트에 대해 궁금한 점이 있으면 무엇이든 물어보세요. 📚</div>';
-    document.getElementById('qa-input').disabled = false;
-    document.getElementById('qa-send-btn').disabled = false;
-    document.getElementById('qa-input').focus();
-  } catch(e) {
-    document.getElementById('qa-body').innerHTML = `<div class="qa-bubble qa-ai" style="color:var(--red)">파일을 불러오지 못했어요: ${e.message}</div>`;
-    document.getElementById('qa-input').disabled = false;
-    document.getElementById('qa-send-btn').disabled = false;
-  }
 }
 function closeQA(e) {
   if (e && e.target !== document.getElementById('modal-qa')) return;
@@ -1386,7 +1361,6 @@ async function sendQA() {
   const input = document.getElementById('qa-input');
   const q = input.value.trim();
   if (!q || !_qaCurrentNoteId) return;
-  if (!_qaFileBuffer) { toast('노트 파일을 아직 불러오는 중이에요.', 'warn'); return; }
   const body = document.getElementById('qa-body');
   const sendBtn = document.getElementById('qa-send-btn');
   input.value = ''; sendBtn.disabled = true;
@@ -1394,19 +1368,7 @@ async function sendQA() {
   body.innerHTML += `<div class="qa-bubble qa-ai" id="qa-loading-msg">🤔 답변 생성 중...</div>`;
   body.scrollTop = body.scrollHeight;
   try {
-    const token = localStorage.getItem('nm_token');
-    const ext = (_qaFileMime || 'application/octet-stream').split('/')[1] || 'bin';
-    const formData = new FormData();
-    formData.append('file', new Blob([_qaFileBuffer], { type: _qaFileMime }), 'note.' + ext);
-    formData.append('note_id', _qaCurrentNoteId);
-    formData.append('question', q);
-    const res = await fetch(API + '/ai/qa', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token },
-      body: formData,
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'AI 오류');
+    const data = await api('/ai/qa', {method:'POST', body:JSON.stringify({note_id:_qaCurrentNoteId, question:q})});
     document.getElementById('qa-loading-msg').remove();
     body.innerHTML += `<div class="qa-bubble qa-ai">${data.answer}</div>`;
   } catch(e) {
