@@ -1,23 +1,29 @@
 const express = require('express');
+const https = require('https');
 const multer = require('multer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { NodeHttpHandler } = require('@smithy/node-http-handler');
 const { db, authenticate } = require('../middleware/auth');
 
-function getR2() {
-  return new S3Client({
-    region: 'auto',
-    endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY },
-  });
-}
+// HTTPS 에이전트 재사용 (TLS 세션 유지)
+const httpsAgent = new https.Agent({ keepAlive: true, minVersion: 'TLSv1.2' });
+
+const r2 = new S3Client({
+  region: 'auto',
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  },
+  requestHandler: new NodeHttpHandler({ httpsAgent }),
+});
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 // POST /api/ai/extract
-// 이미지 또는 PDF를 받아 Gemini로 필기 내용 추출
 router.post('/extract', authenticate, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '파일이 필요해요.' });
 
@@ -36,8 +42,7 @@ router.post('/extract', authenticate, upload.single('file'), async (req, res) =>
       prompt,
     ]);
 
-    const text = result.response.text();
-    res.json({ text });
+    res.json({ text: result.response.text() });
   } catch (err) {
     console.error('AI extract error:', err);
     res.status(500).json({ error: 'AI 변환 중 오류가 발생했어요: ' + err.message });
@@ -45,13 +50,11 @@ router.post('/extract', authenticate, upload.single('file'), async (req, res) =>
 });
 
 // POST /api/ai/qa
-// 구매한 노트 파일을 Gemini에 전달해 질문에 답변
 router.post('/qa', authenticate, async (req, res) => {
   const { note_id, question } = req.body;
   if (!note_id || !question) return res.status(400).json({ error: '노트 ID와 질문이 필요해요.' });
 
   try {
-    // 구매 여부 or 본인 노트 확인
     const [txRes, noteRes] = await Promise.all([
       db.query("SELECT id FROM transactions WHERE note_id=$1 AND buyer_id=$2 AND status='completed'", [note_id, req.user.id]),
       db.query('SELECT file_key, seller_id, title FROM notes WHERE id=$1', [note_id]),
@@ -62,13 +65,14 @@ router.post('/qa', authenticate, async (req, res) => {
       return res.status(403).json({ error: '구매한 노트에만 질문할 수 있어요.' });
 
     // R2에서 파일 다운로드
-    const r2 = getR2();
-    const s3Res = await r2.send(new GetObjectCommand({ Bucket: process.env.R2_PRIVATE_BUCKET, Key: note.file_key }));
+    const s3Res = await r2.send(new GetObjectCommand({
+      Bucket: process.env.R2_PRIVATE_BUCKET,
+      Key: note.file_key,
+    }));
     const chunks = [];
     for await (const chunk of s3Res.Body) chunks.push(chunk);
     const base64 = Buffer.concat(chunks).toString('base64');
 
-    // 파일 확장자로 MIME 타입 결정
     const ext = note.file_key.split('.').pop().toLowerCase();
     const isPDF = ext === 'pdf';
     const imgTypes = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp' };
@@ -81,8 +85,7 @@ router.post('/qa', authenticate, async (req, res) => {
       `이 노트를 참고해서 다음 질문에 답해주세요. 노트에 없는 내용이면 솔직하게 말해주세요.\n\n질문: ${question}`,
     ]);
 
-    const answer = result.response.text();
-    res.json({ answer });
+    res.json({ answer: result.response.text() });
   } catch (err) {
     console.error('AI Q&A error:', err);
     res.status(500).json({ error: 'AI 답변 중 오류가 발생했어요: ' + err.message });
