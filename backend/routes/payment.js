@@ -29,6 +29,8 @@ router.post('/prepare', authenticate, async (req, res) => {
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'pending')
     `, [orderId, req.user.id, req.user.name, noteId, n.seller_id, n.price, fee, netAmount]);
 
+    if (!process.env.NICEPAY_CLIENT_ID) return res.status(500).json({ error: 'NICEPAY_CLIENT_ID 환경변수가 설정되지 않았어요.' });
+
     res.json({
       orderId,
       amount: n.price,
