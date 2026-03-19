@@ -387,6 +387,17 @@ footer a{color:var(--al);text-decoration:none}
   </div>
 </div>
 
+<!-- 내 구매 모달 -->
+<div class="modal-overlay" id="modal-purchases" onclick="closeMyPurchases(event)" style="align-items:flex-start;padding-top:60px">
+  <div class="modal" style="max-width:700px;width:95%;max-height:80vh;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-shrink:0">
+      <h2 style="font-family:'Noto Serif KR',serif;font-size:20px">📚 내가 구매한 노트</h2>
+      <button onclick="closeMyPurchases()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink-m)">✕</button>
+    </div>
+    <div id="purchases-list" style="overflow-y:auto;flex:1"></div>
+  </div>
+</div>
+
 <!-- REPORT MODAL -->
 <div class="modal-overlay" id="modal-rep" onclick="closeRepModal(event)">
   <div class="report-modal">
@@ -498,7 +509,7 @@ function updateNav() {
   } else if (cur.role === 'admin') {
     a.innerHTML = `<button class="nl" style="background:var(--ink);color:var(--cream);padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600" onclick="go('admin')">🛡 관리자 패널</button><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">${cur.name[0]}</div><span style="font-size:14px;font-weight:500">${cur.name}</span><button class="nav-btn ol" onclick="logout()">로그아웃</button></div>`;
   } else {
-    a.innerHTML = `<button class="nl hide-sm" onclick="go('browse')">노트 찾기</button><button class="nl hide-sm" onclick="go('upload')">노트 판매</button><button class="nl hide-sm" onclick="go('seller')">내 판매현황</button><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">${cur.name[0]}</div><span style="font-size:14px;font-weight:500">${cur.name}</span><button class="nav-btn ol" onclick="logout()">로그아웃</button></div>`;
+    a.innerHTML = `<button class="nl hide-sm" onclick="go('browse')">노트 찾기</button><button class="nl hide-sm" onclick="go('upload')">노트 판매</button><button class="nl hide-sm" onclick="go('seller')">내 판매현황</button><button class="nl hide-sm" onclick="openMyPurchases()" style="color:var(--a);font-weight:600">📚 내 구매</button><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">${cur.name[0]}</div><span style="font-size:14px;font-weight:500">${cur.name}</span><button class="nav-btn ol" onclick="logout()">로그아웃</button></div>`;
   }
 }
 
@@ -634,9 +645,12 @@ async function openNote(id) {
       const wlBtns = `<button class="btn-wl" id="wl-btn" onclick="toggleWishlist()">${isWished(n.id)?'♥':'♡'}</button><button class="btn-rpt" onclick="openRepModal()">🚨 신고</button>`;
       if (cur) {
         try {
-          const dlData = await api('/notes/' + n.id + '/download');
-          curDownloadUrl = dlData.downloadUrl;
-          acts.innerHTML = `<button class="btn-buy" onclick="downloadNote()">📥 다운로드</button><button class="btn btn-a btn-sm" style="padding:14px 16px;font-size:14px" onclick="openQA('${n.id}','${(n.title||'').replace(/'/g,'&apos;')}')">✨ AI 질문</button>${wlBtns}`;
+          const { purchased } = await api('/notes/' + n.id + '/purchase-check');
+          if (purchased) {
+            acts.innerHTML = `<button class="btn-buy" onclick="downloadNote()">📥 다운로드</button><button class="btn btn-a btn-sm" style="padding:14px 16px;font-size:14px" onclick="openQA('${n.id}','${(n.title||'').replace(/'/g,'&apos;')}')">✨ AI 질문</button>${wlBtns}`;
+          } else {
+            acts.innerHTML = `<button class="btn-buy" onclick="buyNote()">구매 ${Number(n.price).toLocaleString()}원</button>${wlBtns}`;
+          }
         } catch {
           acts.innerHTML = `<button class="btn-buy" onclick="buyNote()">구매 ${Number(n.price).toLocaleString()}원</button>${wlBtns}`;
         }
@@ -695,8 +709,9 @@ function toggleWishlist() {
 
 // ── 다운로드 ──
 function downloadNote() {
-  if (curDownloadUrl) window.open(curDownloadUrl, '_blank');
-  else toast('다운로드 링크를 찾을 수 없어요.', 'err');
+  const token = localStorage.getItem('nm_token');
+  if (!curNoteId || !token) { toast('다운로드할 수 없어요.', 'err'); return; }
+  window.location.href = `${API}/notes/${curNoteId}/download?token=${encodeURIComponent(token)}`;
 }
 
 // ── 구매 ──
@@ -1281,6 +1296,49 @@ async function openSellerProfile(sellerId) {
     el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink-m)">프로필을 불러올 수 없어요.</div>';
     toast(e.message, 'err');
   }
+}
+
+// ── 내 구매 모달 ──
+async function openMyPurchases() {
+  if (!cur) { openAM('login'); return; }
+  document.getElementById('modal-purchases').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  const list = document.getElementById('purchases-list');
+  list.innerHTML = '<div class="loading" style="margin:40px auto"></div>';
+  try {
+    const { transactions } = await api('/payment/my');
+    if (!transactions.length) {
+      list.innerHTML = '<p style="text-align:center;color:var(--ink-m);padding:40px">아직 구매한 노트가 없어요.</p>';
+      return;
+    }
+    list.innerHTML = transactions.map(t => `
+      <div style="border:1px solid var(--bd);border-radius:12px;padding:16px 18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.note_title||'(제목 없음)'}</div>
+          <div style="font-size:12px;color:var(--ink-m);margin-top:3px">${new Date(t.created_at).toLocaleDateString('ko-KR')} · ${Number(t.amount).toLocaleString()}원</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          <button class="btn btn-s btn-sm" style="font-size:13px" onclick="purchaseDownload('${t.note_id}')">📥 다운로드</button>
+          <button class="btn btn-a btn-sm" style="font-size:13px" onclick="purchaseAI('${t.note_id}','${(t.note_title||'').replace(/'/g,'&apos;')}')">✨ AI 질문</button>
+        </div>
+      </div>`).join('');
+  } catch (e) {
+    list.innerHTML = `<p style="text-align:center;color:var(--red);padding:40px">${e.message}</p>`;
+  }
+}
+function closeMyPurchases(e) {
+  if (e && e.target !== document.getElementById('modal-purchases')) return;
+  document.getElementById('modal-purchases').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function purchaseDownload(noteId) {
+  const token = localStorage.getItem('nm_token');
+  window.location.href = `${API}/notes/${noteId}/download?token=${encodeURIComponent(token)}`;
+}
+function purchaseAI(noteId, noteTitle) {
+  document.getElementById('modal-purchases').classList.remove('open');
+  document.body.style.overflow = '';
+  openQA(noteId, noteTitle);
 }
 
 // ── AI Q&A ──

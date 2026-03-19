@@ -1,9 +1,26 @@
 const express = require('express');
+const https = require('https');
 const multer = require('multer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { db, authenticate } = require('../middleware/auth');
+
+// R2에서 파일을 https.get으로 다운로드 (AWS SDK HTTP 클라이언트 완전 우회)
+function downloadFromR2(presignedUrl) {
+  return new Promise((resolve, reject) => {
+    https.get(presignedUrl, (stream) => {
+      if (stream.statusCode !== 200) {
+        reject(new Error(`R2 응답 오류: ${stream.statusCode}`));
+        return;
+      }
+      const chunks = [];
+      stream.on('data', c => chunks.push(c));
+      stream.on('end', () => resolve(Buffer.concat(chunks)));
+      stream.on('error', reject);
+    }).on('error', reject);
+  });
+}
 
 // presigned URL 생성용 (실제 네트워크 요청 없음)
 const r2 = new S3Client({
@@ -67,11 +84,9 @@ router.post('/qa', authenticate, async (req, res) => {
       Key: note.file_key,
     }), { expiresIn: 300 });
 
-    // Node.js 내장 fetch로 다운로드 (AWS SDK HTTP 클라이언트 우회)
-    const fileResponse = await fetch(presignedUrl);
-    if (!fileResponse.ok) throw new Error(`파일 다운로드 실패: ${fileResponse.status}`);
-    const arrayBuffer = await fileResponse.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    // https.get으로 다운로드 (AWS SDK HTTP 클라이언트 완전 우회)
+    const fileBuffer = await downloadFromR2(presignedUrl);
+    const base64 = fileBuffer.toString('base64');
 
     const ext = note.file_key.split('.').pop().toLowerCase();
     const isPDF = ext === 'pdf';

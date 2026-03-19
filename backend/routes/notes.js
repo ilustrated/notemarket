@@ -189,29 +189,68 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
-// ── 다운로드 URL 발급 (구매자 확인 후) ──
-// GET /api/notes/:id/download
-router.get('/:id/download', authenticate, async (req, res) => {
+// ── 구매 여부 확인 ──
+// GET /api/notes/:id/purchase-check
+router.get('/:id/purchase-check', authenticate, async (req, res) => {
   try {
-    // 구매 내역 확인
     const tx = await db.query(
       "SELECT id FROM transactions WHERE note_id=$1 AND buyer_id=$2 AND status='completed'",
       [req.params.id, req.user.id]
     );
-    // 관리자는 구매 없이도 다운로드 가능
-    if (!tx.rows[0] && req.user.role !== 'admin')
+    res.json({ purchased: !!tx.rows[0] || req.user.role === 'admin' });
+  } catch (err) {
+    res.status(500).json({ error: '서버 오류가 발생했어요.' });
+  }
+});
+
+// ── 파일 다운로드 (서버가 R2에서 받아 클라이언트로 스트리밍) ──
+// GET /api/notes/:id/download  (Authorization 헤더 또는 ?token= 쿼리 파라미터)
+router.get('/:id/download', async (req, res) => {
+  try {
+    // 토큰을 헤더 또는 쿼리 파라미터에서 읽기
+    const jwt = require('jsonwebtoken');
+    const rawToken = (req.headers.authorization || '').replace('Bearer ', '') || req.query.token || '';
+    let userId, userRole;
+    try {
+      const decoded = jwt.verify(rawToken, process.env.JWT_ACCESS_SECRET);
+      const u = await db.query('SELECT id, role FROM users WHERE id=$1 AND status=$2', [decoded.id, 'active']);
+      if (!u.rows[0]) return res.status(401).json({ error: '인증 오류' });
+      userId = u.rows[0].id;
+      userRole = u.rows[0].role;
+    } catch { return res.status(401).json({ error: '로그인이 필요해요.' }); }
+
+    // 구매 내역 확인
+    const tx = await db.query(
+      "SELECT id FROM transactions WHERE note_id=$1 AND buyer_id=$2 AND status='completed'",
+      [req.params.id, userId]
+    );
+    if (!tx.rows[0] && userRole !== 'admin')
       return res.status(403).json({ error: '구매 후 다운로드할 수 있어요.' });
 
-    const note = await db.query('SELECT file_key FROM notes WHERE id = $1', [req.params.id]);
+    const note = await db.query('SELECT file_key, title FROM notes WHERE id = $1', [req.params.id]);
     if (!note.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
 
-    // 6시간 유효 다운로드 URL 발급
-    const downloadUrl = await getSignedUrl(r2, new GetObjectCommand({
+    const { file_key, title } = note.rows[0];
+    const presignedUrl = await getSignedUrl(r2, new GetObjectCommand({
       Bucket: process.env.R2_PRIVATE_BUCKET,
-      Key: note.rows[0].file_key,
-    }), { expiresIn: 21600 });
+      Key: file_key,
+    }), { expiresIn: 60 });
 
-    res.json({ downloadUrl });
+    // 서버에서 R2 파일을 받아 클라이언트로 중계 (브라우저가 R2에 직접 접속 안 함)
+    const https = require('https');
+    const ext = file_key.split('.').pop().toLowerCase();
+    const filename = encodeURIComponent(title + '.' + ext);
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
+
+    const r2Req = https.get(presignedUrl, (r2Stream) => {
+      res.setHeader('Content-Type', r2Stream.headers['content-type'] || 'application/octet-stream');
+      if (r2Stream.headers['content-length']) res.setHeader('Content-Length', r2Stream.headers['content-length']);
+      r2Stream.pipe(res);
+    });
+    r2Req.on('error', (err) => {
+      console.error('R2 stream error:', err.message);
+      if (!res.headersSent) res.status(500).json({ error: '파일 다운로드 실패: ' + err.message });
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: '서버 오류가 발생했어요.' });
