@@ -9,8 +9,7 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 // R2 공개 URL로 파일 읽기
 async function getFileFromR2(key) {
-  const publicUrl = process.env.R2_PUBLIC_URL;
-  if (!publicUrl) throw new Error('R2 공개 URL이 설정되지 않았어요.');
+  const publicUrl = process.env.R2_PUBLIC_URL || 'https://pub-16c342b8599446c68d65ea9999121044.r2.dev';
   const r2Res = await fetch(`${publicUrl}/${key}`);
   if (!r2Res.ok) throw new Error(`파일 다운로드 실패: ${r2Res.status}`);
   const buffer = Buffer.from(await r2Res.arrayBuffer());

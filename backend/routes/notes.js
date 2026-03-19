@@ -229,11 +229,8 @@ router.get('/:id/download', async (req, res) => {
     if (!tx.rows[0] && seller_id !== userId && userRole !== 'admin')
       return res.status(403).json({ error: '구매 후 다운로드할 수 있어요.' });
 
-    const publicUrl = process.env.R2_PUBLIC_URL;
-    if (!publicUrl) return res.status(500).json({
-      error: 'R2_PUBLIC_URL 없음',
-      r2_keys: Object.keys(process.env).filter(k => k.startsWith('R2')),
-    });
+    const publicUrl = process.env.R2_PUBLIC_URL || 'https://pub-16c342b8599446c68d65ea9999121044.r2.dev';
+
 
     res.redirect(`${publicUrl}/${file_key}`);
   } catch (err) {
