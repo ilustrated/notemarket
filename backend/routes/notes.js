@@ -1,8 +1,10 @@
 const express  = require('express');
+const multer   = require('multer');
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { db, authenticate, requireAdmin } = require('../middleware/auth');
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 // Cloudflare R2 클라이언트 설정
 const r2 = new S3Client({
@@ -103,6 +105,26 @@ router.get('/:id', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: '서버 오류가 발생했어요.' });
+  }
+});
+
+// ── 파일 직접 업로드 (멀티파트) ──
+// POST /api/notes/upload
+router.post('/upload', authenticate, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: '파일이 필요해요.' });
+    const ext = (req.file.originalname || 'note.pdf').split('.').pop();
+    const key = `notes/${req.user.id}/${Date.now()}.${ext}`;
+    await r2.send(new PutObjectCommand({
+      Bucket: process.env.R2_PRIVATE_BUCKET,
+      Key: key,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype || 'application/pdf',
+    }));
+    res.json({ key });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '파일 업로드 실패.' });
   }
 });
 
