@@ -1,37 +1,7 @@
 const express = require('express');
-const https = require('https');
 const multer = require('multer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
-const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { db, authenticate } = require('../middleware/auth');
-
-// R2에서 파일을 https.get으로 다운로드 (AWS SDK HTTP 클라이언트 완전 우회)
-function downloadFromR2(presignedUrl) {
-  return new Promise((resolve, reject) => {
-    https.get(presignedUrl, (stream) => {
-      if (stream.statusCode !== 200) {
-        reject(new Error(`R2 응답 오류: ${stream.statusCode}`));
-        return;
-      }
-      const chunks = [];
-      stream.on('data', c => chunks.push(c));
-      stream.on('end', () => resolve(Buffer.concat(chunks)));
-      stream.on('error', reject);
-    }).on('error', reject);
-  });
-}
-
-// presigned URL 생성용 (실제 네트워크 요청 없음)
-const r2 = new S3Client({
-  region: 'auto',
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-  },
-  forcePathStyle: true, // R2 SSL 인증서 호환
-});
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
@@ -64,34 +34,24 @@ router.post('/extract', authenticate, upload.single('file'), async (req, res) =>
 });
 
 // POST /api/ai/qa
-router.post('/qa', authenticate, async (req, res) => {
+// 프론트엔드가 R2에서 파일을 직접 받아 multipart로 전송 (서버→R2 SSL 문제 우회)
+router.post('/qa', authenticate, upload.single('file'), async (req, res) => {
   const { note_id, question } = req.body;
   if (!note_id || !question) return res.status(400).json({ error: '노트 ID와 질문이 필요해요.' });
+  if (!req.file) return res.status(400).json({ error: '파일이 필요해요.' });
 
   try {
     const [txRes, noteRes] = await Promise.all([
       db.query("SELECT id FROM transactions WHERE note_id=$1 AND buyer_id=$2 AND status='completed'", [note_id, req.user.id]),
-      db.query('SELECT file_key, seller_id, title FROM notes WHERE id=$1', [note_id]),
+      db.query('SELECT seller_id, title FROM notes WHERE id=$1', [note_id]),
     ]);
     const note = noteRes.rows[0];
     if (!note) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
     if (!txRes.rows[0] && note.seller_id !== req.user.id)
       return res.status(403).json({ error: '구매한 노트에만 질문할 수 있어요.' });
 
-    // Presigned URL 생성 (로컬 서명, 네트워크 요청 없음)
-    const presignedUrl = await getSignedUrl(r2, new GetObjectCommand({
-      Bucket: process.env.R2_PRIVATE_BUCKET,
-      Key: note.file_key,
-    }), { expiresIn: 300 });
-
-    // https.get으로 다운로드 (AWS SDK HTTP 클라이언트 완전 우회)
-    const fileBuffer = await downloadFromR2(presignedUrl);
-    const base64 = fileBuffer.toString('base64');
-
-    const ext = note.file_key.split('.').pop().toLowerCase();
-    const isPDF = ext === 'pdf';
-    const imgTypes = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp' };
-    const mimeType = isPDF ? 'application/pdf' : (imgTypes[ext] || 'image/jpeg');
+    const base64 = req.file.buffer.toString('base64');
+    const mimeType = req.file.mimetype;
 
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
     const result = await model.generateContent([
