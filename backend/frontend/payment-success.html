@@ -47,9 +47,9 @@ p{color:var(--ink-m);font-size:14px;line-height:1.8}
 </div>
 
 <script>
-const API = 'https://notemarket.kr/api';
+const API = '/api';
 
-async function confirm() {
+async function processPayment() {
   const params = new URLSearchParams(location.search);
   const authResultCode = params.get('authResultCode');
   const authResultMsg  = params.get('authResultMsg');
@@ -116,7 +116,7 @@ function showError(msg) {
   document.getElementById('card').appendChild(btn);
 }
 
-confirm();
+processPayment();
 </script>
 </body>
 </html>

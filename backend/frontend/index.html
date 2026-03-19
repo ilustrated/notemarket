@@ -704,6 +704,7 @@ async function buyNote() {
   if (!cur) { closeNM(); openAM('login'); toast('구매하려면 먼저 로그인해주세요.'); return; }
   try {
     const order = await api('/payment/prepare', { method: 'POST', body: JSON.stringify({ noteId: curNoteId }) });
+    if (typeof AUTHNICE === 'undefined') { toast('결제 모듈을 불러오지 못했어요. 페이지를 새로고침 후 다시 시도해주세요.', 'err'); return; }
     AUTHNICE.requestPay({
       clientId: order.clientId,
       method: 'card',
@@ -712,9 +713,15 @@ async function buyNote() {
       goodsName: order.orderName,
       buyerName: order.customerName,
       returnUrl: location.origin + '/api/payment/nicepay-callback',
-      fnError: function(result) { toast(result.resultMsg || '결제에 실패했어요.', 'err'); },
+      fnError: function(result) { toast('[나이스페이] ' + (result.resultMsg || '결제에 실패했어요.'), 'err'); },
     });
-  } catch (e) { toast(e.message, 'err'); }
+  } catch (e) {
+    if (e.message === 'Failed to fetch') {
+      toast('서버에 연결할 수 없어요. 잠시 후 다시 시도해주세요.', 'err');
+    } else {
+      toast(e.message, 'err');
+    }
+  }
 }
 async function adminDelNote(id) {
   if (!confirm('이 노트를 삭제하시겠어요?')) return;
