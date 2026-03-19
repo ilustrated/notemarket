@@ -76,4 +76,58 @@ router.post('/qa', authenticate, async (req, res) => {
   }
 });
 
+// ── POST /api/ai/exam-analysis ──
+// 기출문제 분석 (인증 + 판매자)
+router.post('/exam-analysis', authenticate, upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '파일이 필요해요.' });
+  const { note_id } = req.body;
+  if (!note_id) return res.status(400).json({ error: 'note_id가 필요해요.' });
+
+  try {
+    // 판매자 소유 확인
+    const noteRes = await db.query('SELECT seller_id FROM notes WHERE id=$1', [note_id]);
+    if (!noteRes.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
+    if (noteRes.rows[0].seller_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: '본인의 노트에만 분석을 업로드할 수 있어요.' });
+    }
+
+    const { mimetype, buffer } = req.file;
+    const base64 = buffer.toString('base64');
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const prompt = '이 기출문제를 분석해서 교수님의 출제 경향을 분석해주세요:\n\n📊 출제 유형 분포 (퍼센트로)\n🎯 자주 나오는 토픽 (상위 5개)\n💡 시험 준비 전략\n⚠️ 주의할 점\n\n마크다운 기호(#, **, - 등) 없이 일반 텍스트로 작성해주세요.';
+
+    const result = await model.generateContent([
+      { inlineData: { data: base64, mimeType: mimetype } },
+      prompt,
+    ]);
+    const analysis = result.response.text();
+
+    await db.query(
+      'INSERT INTO exam_analyses (note_id, analysis) VALUES ($1, $2)',
+      [note_id, analysis]
+    );
+
+    res.json({ analysis });
+  } catch (err) {
+    console.error('AI exam-analysis error:', err);
+    res.status(500).json({ error: 'AI 분석 중 오류가 발생했어요: ' + err.message });
+  }
+});
+
+// ── GET /api/ai/exam-analysis/:noteId ──
+// 기출문제 분석 조회 (공개)
+router.get('/exam-analysis/:noteId', async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT analysis, created_at FROM exam_analyses WHERE note_id=$1 ORDER BY created_at DESC LIMIT 1',
+      [req.params.noteId]
+    );
+    const row = result.rows[0];
+    res.json({ analysis: row ? row.analysis : null, updated_at: row ? row.created_at : null });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '서버 오류가 발생했어요.' });
+  }
+});
+
 module.exports = router;

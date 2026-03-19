@@ -46,12 +46,14 @@ router.get('/', async (req, res) => {
     const sql = `
       SELECT n.*, u.name AS seller_name,
         COALESCE(AVG(r.rating), 0) AS avg_rating,
-        COUNT(r.id) AS review_count
+        COUNT(r.id) AS review_count,
+        gb.grade AS badge_grade
       FROM notes n
       JOIN users u ON u.id = n.seller_id
       LEFT JOIN reviews r ON r.note_id = n.id
+      LEFT JOIN grade_badges gb ON gb.note_id = n.id AND gb.status = 'approved'
       WHERE ${where.join(' AND ')}
-      GROUP BY n.id, u.name
+      GROUP BY n.id, u.name, gb.grade
       ORDER BY ${order}
       LIMIT $${pi} OFFSET $${pi + 1}
     `;
@@ -93,12 +95,14 @@ router.get('/:id', async (req, res) => {
             JSON_BUILD_OBJECT('name', r.reviewer_name, 'rating', r.rating, 'content', r.content, 'created_at', r.created_at)
             ORDER BY r.created_at DESC
           ) FILTER (WHERE r.id IS NOT NULL), '[]'
-        ) AS reviews
+        ) AS reviews,
+        gb.grade AS badge_grade
       FROM notes n
       JOIN users u ON u.id = n.seller_id
       LEFT JOIN reviews r ON r.note_id = n.id
+      LEFT JOIN grade_badges gb ON gb.note_id = n.id AND gb.status = 'approved'
       WHERE n.id = $1 AND ${statusFilter}
-      GROUP BY n.id, u.name, u.school
+      GROUP BY n.id, u.name, u.school, gb.grade
     `, [req.params.id]);
 
     if (!result.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });

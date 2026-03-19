@@ -15,6 +15,7 @@ try { app.use('/api/notes', require('./routes/notes')); } catch(e) { console.err
 try { app.use('/api/payment', require('./routes/payment')); } catch(e) { console.error('payment route error:', e.message); }
 try { app.use('/api/admin', require('./routes/admin')); } catch(e) { console.error('admin route error:', e.message); }
 try { app.use('/api/ai', require('./routes/ai')); } catch(e) { console.error('ai route error:', e.message); }
+try { app.use('/api/study', require('./routes/study')); } catch(e) { console.error('study route error:', e.message); }
 
 app.get('/api/envkeys', (req, res) => res.json({ keys: Object.keys(process.env).sort() }));
 

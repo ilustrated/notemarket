@@ -319,6 +319,7 @@ footer a{color:var(--al);text-decoration:none}
       <div class="anav" id="anav-rep" onclick="showA('rep')"><span>🚨</span>신고<span class="anav-b" id="rep-badge" style="display:none">0</span></div>
       <div class="anav" id="anav-na" onclick="showA('na')"><span>📄</span>노트 관리</div>
       <div class="anav" id="anav-users" onclick="showA('users')"><span>👥</span>사용자</div>
+      <div class="anav" id="anav-badges" onclick="showA('badges')"><span>🏆</span>성적인증 관리</div>
       <div style="margin-top:auto;padding-top:24px;border-top:1px solid rgba(255,255,255,.1)">
         <div class="anav" onclick="logout()"><span>🚪</span>로그아웃</div>
       </div>
@@ -329,6 +330,7 @@ footer a{color:var(--al);text-decoration:none}
       <div class="asec" id="a-settle"><div class="asec-title">정산 관리</div><div class="asec-sub">거래일로부터 7일 경과 후 정산 가능 — 잠금 금액은 아직 7일이 지나지 않은 금액</div><div class="a-stats" id="settle-stats" style="grid-template-columns:repeat(3,1fr)"></div><div class="ap"><div class="ap-hdr"><div class="ap-title">판매자별 정산 현황</div></div><div id="settle-list"></div></div></div>
       <div class="asec" id="a-rep"><div class="asec-title">신고 관리</div><div class="asec-sub">사용자가 신고한 노트를 검토하세요</div><div class="a-stats" id="rep-stats" style="grid-template-columns:repeat(3,1fr)"></div><div class="ap"><div class="ap-hdr"><div class="ap-title">신고 목록</div><select id="rep-filter" style="border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:13px;background:#fff;font-family:inherit" onchange="loadReports()"><option value="">전체</option><option value="pending">미처리</option><option value="resolved">처리됨</option></select></div><div id="rep-list"></div></div></div>
       <div class="asec" id="a-na"><div class="asec-title">노트 관리</div><div class="asec-sub">관리자는 삭제된 노트를 포함한 모든 노트 열람·삭제 가능</div><div style="display:flex;gap:8px;margin-bottom:12px"><select id="note-sf" style="border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:13px;background:#fff;font-family:inherit" onchange="loadAdminNotes()"><option value="">전체</option><option value="live">게시중</option><option value="removed">삭제됨</option></select><input id="note-sq" placeholder="노트명 검색" style="flex:1;border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:13px;background:#fff;font-family:inherit" oninput="loadAdminNotes()"></div><div class="ap" style="overflow-x:auto"><table class="at"><thead><tr><th>노트</th><th>판매자</th><th>학교·과목</th><th>가격</th><th>상태</th><th>업로드</th><th>DL</th><th>신고</th><th>관리</th></tr></thead><tbody id="na-tbody"></tbody></table></div></div>
+      <div class="asec" id="a-badges"><div class="asec-title">성적인증 관리</div><div class="asec-sub">판매자가 신청한 성적 인증 배지를 검토하고 승인·거절하세요</div><div class="ap" style="overflow-x:auto"><table class="at"><thead><tr><th>노트</th><th>판매자</th><th>학점</th><th>상태</th><th>신청일</th><th>관리자 메모</th><th>관리</th></tr></thead><tbody id="badges-tbody"></tbody></table></div></div>
       <div class="asec" id="a-users"><div class="asec-title">사용자 관리</div><div class="asec-sub">전체 회원 현황</div><div class="ap"><div class="ap-hdr"><div class="ap-title" id="ulbl">전체 사용자</div><input id="user-q" placeholder="이름·이메일 검색" style="border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:13px;background:#fff;font-family:inherit;width:180px" oninput="loadUsers()"></div><div style="overflow-x:auto"><table class="at"><thead><tr><th>이름</th><th>이메일</th><th>학교·학과</th><th>상태</th><th>가입일</th><th>판매</th><th>잔액</th><th>관리</th></tr></thead><tbody id="u-tbody"></tbody></table></div></div></div>
     </div>
   </div>
@@ -363,6 +365,11 @@ footer a{color:var(--al);text-decoration:none}
       </div>
       <div class="prev-box"><div class="prev-lbl">미리보기</div><div class="prev-txt" id="m-prev"></div><div class="prev-blur">····· 이하 내용은 구매 후 열람 가능 ·····<br>██████████ ████ ████████</div></div>
       <div class="m-actions" id="m-acts"></div>
+      <div id="m-study-section"></div>
+      <div id="m-exam-analysis" style="display:none;margin-top:20px;padding:20px;background:#f0f7ff;border:1px solid #b3d4f5;border-radius:12px">
+        <div style="font-size:13px;font-weight:700;color:#1565C0;margin-bottom:10px">📊 AI 족보 분석</div>
+        <div id="m-exam-text" style="font-size:13px;color:#1A1714;line-height:1.8;white-space:pre-wrap"></div>
+      </div>
       <div class="rvs"><div class="ms-t">구매자 리뷰</div><div id="m-rvs"></div></div>
     </div>
   </div>
@@ -395,6 +402,43 @@ footer a{color:var(--al);text-decoration:none}
       <button onclick="closeMyPurchases()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink-m)">✕</button>
     </div>
     <div id="purchases-list" style="overflow-y:auto;flex:1"></div>
+  </div>
+</div>
+
+<!-- STUDY GROUP MODAL -->
+<div class="modal-overlay" id="modal-study" onclick="closeStudyModal(event)" style="align-items:flex-start;padding-top:60px">
+  <div class="modal" style="max-width:560px;width:95%;max-height:80vh;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-shrink:0">
+      <div>
+        <h2 style="font-family:'Noto Serif KR',serif;font-size:18px">👥 스터디 그룹</h2>
+        <div id="study-modal-title" style="font-size:13px;color:var(--ink-m);margin-top:2px"></div>
+      </div>
+      <button onclick="document.getElementById('modal-study').classList.remove('open');document.body.style.overflow=''" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink-m)">✕</button>
+    </div>
+    <div id="study-modal-content" style="overflow-y:auto;flex:1"></div>
+  </div>
+</div>
+
+<!-- GRADE BADGE MODAL -->
+<div class="modal-overlay" id="modal-grade-badge" onclick="closeGradeBadgeModal(event)">
+  <div class="report-modal" style="max-width:440px">
+    <div style="font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;margin-bottom:6px">🏆 성적 인증 신청</div>
+    <div style="color:var(--ink-m);font-size:14px;margin-bottom:20px">성적표 스크린샷과 취득 학점을 제출하면 관리자 검토 후 배지가 부여됩니다.</div>
+    <input type="hidden" id="gb-note-id">
+    <div class="fg"><label class="fl">취득 학점 <span class="req">*</span></label><input class="fi" id="gb-grade" placeholder="예: A+, A0, B+" style="background:#fff;border:1.5px solid var(--bd);border-radius:10px;padding:12px 16px;font-size:15px;color:var(--ink);font-family:inherit;outline:none;width:100%"></div>
+    <div class="fg" style="margin-top:14px"><label class="fl">성적표 스크린샷 <span class="req">*</span></label><input type="file" id="gb-file" accept="image/*,.pdf" style="width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;font-size:14px;background:#fff;font-family:inherit"></div>
+    <div style="display:flex;gap:10px;margin-top:18px"><button class="btn btn-g" id="gb-submit-btn" style="flex:1" onclick="submitGradeBadge()">신청 제출</button><button class="btn btn-s" onclick="closeGradeBadgeModal()">취소</button></div>
+  </div>
+</div>
+
+<!-- EXAM ANALYSIS UPLOAD MODAL -->
+<div class="modal-overlay" id="modal-exam-analysis" onclick="closeExamAnalysisModal(event)">
+  <div class="report-modal" style="max-width:440px">
+    <div style="font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;margin-bottom:6px">📊 족보 분석 업로드</div>
+    <div style="color:var(--ink-m);font-size:14px;margin-bottom:20px">기출문제 파일을 업로드하면 AI가 출제 경향을 분석해서 구매자들에게 제공합니다.</div>
+    <input type="hidden" id="ea-note-id">
+    <div class="fg"><label class="fl">기출문제 파일 (PDF 또는 이미지) <span class="req">*</span></label><input type="file" id="ea-file" accept="image/*,.pdf" style="width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;font-size:14px;background:#fff;font-family:inherit"></div>
+    <div style="display:flex;gap:10px;margin-top:18px"><button class="btn btn-a" id="ea-submit-btn" style="flex:1" onclick="submitExamAnalysis()">AI 분석 시작</button><button class="btn btn-s" onclick="closeExamAnalysisModal()">취소</button></div>
   </div>
 </div>
 
@@ -572,7 +616,7 @@ async function loadNotes() {
         <div class="nc-thumb" style="background:${n.color||'#C8841A'}18;color:${n.color||'#C8841A'}">${n.subject||n.title}<br><span style="font-size:11px;opacity:.6">${n.semester||''}</span></div>
         <div class="nc-body">
           <div class="nc-school">${n.school||''} · ${n.department||''}</div>
-          <div class="nc-title">${n.title}</div>
+          <div class="nc-title">${n.title}${n.badge_grade ? ` <span style="display:inline-block;background:#FFF8E1;color:#B8860B;border:1px solid #DAA520;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;vertical-align:middle">✓ 성적인증 ${n.badge_grade}</span>` : ''}</div>
           <div class="nc-prof">${n.professor||''} · ${n.pages||'PDF'}</div>
           <div class="nc-foot">
             <div class="nc-seller"><div class="av" style="background:${n.color||'#C8841A'}">${(n.seller_name||'?')[0]}</div><span style="font-size:12px;color:var(--ink-m)">${n.seller_name||''}</span></div>
@@ -633,9 +677,17 @@ async function openNote(id) {
     document.getElementById('m-prev').textContent  = n.preview_key ? '(미리보기 이미지는 실제 서비스에서 표시됩니다)' : n.description || '';
 
     const adminBanner = document.getElementById('m-admin-banner');
+    let bannerHtml = '';
     if (cur?.role === 'admin' && n.status === 'removed') {
-      adminBanner.innerHTML = `<div style="background:var(--red-l);border:1px solid #FFCDD2;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--red);display:flex;align-items:center;gap:8px">🛡 관리자 뷰 — 삭제된 노트입니다 (일반 사용자에게 보이지 않음)</div>`;
-    } else adminBanner.innerHTML = '';
+      bannerHtml += `<div style="background:var(--red-l);border:1px solid #FFCDD2;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--red);display:flex;align-items:center;gap:8px">🛡 관리자 뷰 — 삭제된 노트입니다 (일반 사용자에게 보이지 않음)</div>`;
+    }
+    if (n.badge_grade) {
+      bannerHtml += `<div style="background:#FFF8E1;border:1px solid #DAA520;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:14px;color:#B8860B;display:flex;align-items:center;gap:8px;font-weight:600">🏆 성적인증: ${n.badge_grade} — 판매자가 실제로 취득한 성적입니다</div>`;
+    }
+    adminBanner.innerHTML = bannerHtml;
+
+    // 족보 분석 로드
+    loadExamAnalysis(n.id);
 
     const acts = document.getElementById('m-acts');
     curDownloadUrl = null;
@@ -646,8 +698,11 @@ async function openNote(id) {
       if (cur) {
         try {
           const { purchased } = await api('/notes/' + n.id + '/purchase-check');
-          if (purchased) {
+          const isSeller = n.seller_id === cur.id;
+          if (purchased || isSeller) {
             acts.innerHTML = `<button class="btn-buy" onclick="downloadNote()">📥 다운로드</button><button class="btn btn-a btn-sm" style="padding:14px 16px;font-size:14px" onclick="openQA('${n.id}','${(n.title||'').replace(/'/g,'&apos;')}')">✨ AI 질문</button>${wlBtns}`;
+            // 스터디 그룹 섹션 로드
+            loadStudySection(n.id, isSeller);
           } else {
             acts.innerHTML = `<button class="btn-buy" onclick="buyNote()">구매 ${Number(n.price).toLocaleString()}원</button>${wlBtns}`;
           }
@@ -1015,7 +1070,7 @@ async function loadSellerDash() {
         ${!(notes||[]).length ? '<div class="empty-state">아직 등록한 노트가 없어요.</div>' : (notes||[]).map(n => {
           const noteTxs = (transactions||[]).filter(t => t.note_id === n.id);
           const ne = noteTxs.reduce((s, t) => s + (t.net_amount||0), 0);
-          return `<div class="nr"><div class="nr-d" style="background:${n.color||'#C8841A'}"></div><div class="nr-i"><div class="nr-t">${n.title}</div><div class="nr-m">${n.school||''} · ${Number(n.price).toLocaleString()}원 · <span class="badge ${n.status==='live'?'bl':'br'}">${n.status==='live'?'게시중':'삭제됨'}</span></div></div><div style="display:flex;gap:12px"><div class="nrs"><div class="nrs-v">${n.download_count||0}</div><div class="nrs-l">다운로드</div></div><div class="nrs"><div class="nrs-v">${ne.toLocaleString()}원</div><div class="nrs-l">수익</div></div></div></div>`;
+          return `<div class="nr" style="flex-wrap:wrap;gap:10px"><div class="nr-d" style="background:${n.color||'#C8841A'}"></div><div class="nr-i"><div class="nr-t">${n.title}</div><div class="nr-m">${n.school||''} · ${Number(n.price).toLocaleString()}원 · <span class="badge ${n.status==='live'?'bl':'br'}">${n.status==='live'?'게시중':'삭제됨'}</span></div></div><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div class="nrs"><div class="nrs-v">${n.download_count||0}</div><div class="nrs-l">다운로드</div></div><div class="nrs"><div class="nrs-v">${ne.toLocaleString()}원</div><div class="nrs-l">수익</div></div>${n.status==='live'?`<button class="btn btn-sm" style="background:#FFF8E1;color:#B8860B;border:1px solid #DAA520;font-size:11px" onclick="openGradeBadgeForm('${n.id}')">🏆 성적 인증 신청</button><button class="btn btn-sm btn-s" style="font-size:11px" onclick="openExamAnalysisUpload('${n.id}')">📊 족보 분석 업로드</button>`:''}</div></div>`;
         }).join('')}
       </div>
       <div class="dash-panel">
@@ -1222,10 +1277,11 @@ async function changeUserStatus(id, status) {
 }
 
 function showA(tab) {
-  ['ov','log','settle','rep','na','users'].forEach(t => {
+  ['ov','log','settle','rep','na','users','badges'].forEach(t => {
     document.getElementById('a-'+t)?.classList.toggle('active', t === tab);
     document.getElementById('anav-'+t)?.classList.toggle('active', t === tab);
   });
+  if (tab === 'badges') loadAdminBadges();
 }
 
 // ── AUTH MODAL ──
@@ -1311,15 +1367,30 @@ async function openMyPurchases() {
       list.innerHTML = '<p style="text-align:center;color:var(--ink-m);padding:40px">아직 구매한 노트가 없어요.</p>';
       return;
     }
+    // 각 노트의 스터디 그룹 인원도 비동기로 가져오기
+    const studyCounts = {};
+    await Promise.all(transactions.map(async t => {
+      try {
+        const sg = await api('/study/' + t.note_id + '/members');
+        studyCounts[t.note_id] = sg.count || 0;
+      } catch { studyCounts[t.note_id] = 0; }
+    }));
+
     list.innerHTML = transactions.map(t => `
-      <div style="border:1px solid var(--bd);border-radius:12px;padding:16px 18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.note_title||'(제목 없음)'}</div>
-          <div style="font-size:12px;color:var(--ink-m);margin-top:3px">${new Date(t.created_at).toLocaleDateString('ko-KR')} · ${Number(t.amount).toLocaleString()}원</div>
+      <div style="border:1px solid var(--bd);border-radius:12px;padding:16px 18px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.note_title||'(제목 없음)'}</div>
+            <div style="font-size:12px;color:var(--ink-m);margin-top:3px">${new Date(t.created_at).toLocaleDateString('ko-KR')} · ${Number(t.amount).toLocaleString()}원</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-shrink:0">
+            <button class="btn btn-s btn-sm" style="font-size:13px" onclick="purchaseDownload('${t.note_id}')">📥 다운로드</button>
+            <button class="btn btn-a btn-sm" style="font-size:13px" onclick="purchaseAI('${t.note_id}','${(t.note_title||'').replace(/'/g,'&apos;')}')">✨ AI 질문</button>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;flex-shrink:0">
-          <button class="btn btn-s btn-sm" style="font-size:13px" onclick="purchaseDownload('${t.note_id}')">📥 다운로드</button>
-          <button class="btn btn-a btn-sm" style="font-size:13px" onclick="purchaseAI('${t.note_id}','${(t.note_title||'').replace(/'/g,'&apos;')}')">✨ AI 질문</button>
+        <div style="display:flex;align-items:center;gap:10px;padding-top:8px;border-top:1px solid var(--bd)">
+          <span style="font-size:12px;color:var(--ink-m)">👥 ${studyCounts[t.note_id]}명이 함께 공부 중</span>
+          <button class="btn btn-sm" style="font-size:11px;background:var(--teal-l);color:var(--teal);border:1px solid var(--teal)" onclick="openStudyGroupModal('${t.note_id}','${(t.note_title||'').replace(/'/g,'&apos;')}')">스터디 참여</button>
         </div>
       </div>`).join('');
   } catch (e) {
@@ -1379,6 +1450,223 @@ async function sendQA() {
   }
 }
 
+// ── AI 족보 분석 ──
+async function loadExamAnalysis(noteId) {
+  const section = document.getElementById('m-exam-analysis');
+  if (!section) return;
+  try {
+    const data = await api('/ai/exam-analysis/' + noteId);
+    if (data.analysis) {
+      document.getElementById('m-exam-text').textContent = data.analysis;
+      section.style.display = 'block';
+    } else {
+      section.style.display = 'none';
+    }
+  } catch {
+    section.style.display = 'none';
+  }
+}
+
+// ── 스터디 그룹 섹션 (노트 상세 모달용) ──
+async function loadStudySection(noteId, isSeller) {
+  const el = document.getElementById('m-study-section');
+  if (!el) return;
+  try {
+    const data = await api('/study/' + noteId + '/members');
+    const { members, joined, count } = data;
+    el.innerHTML = `
+      <div style="margin-top:20px;padding:16px;background:var(--teal-l);border:1px solid #80CBC4;border-radius:12px">
+        <div style="font-size:14px;font-weight:700;color:var(--teal);margin-bottom:10px">👥 스터디 그룹 ${count}명 참여 중</div>
+        ${members.length ? `<div style="margin-bottom:12px;display:flex;flex-direction:column;gap:6px">${members.map(m=>`<div style="font-size:13px;background:#fff;border-radius:8px;padding:8px 12px;display:flex;gap:8px;align-items:center"><span style="font-weight:600">${m.name}</span><span style="color:var(--ink-m);font-size:11px">${m.school||''}${m.department?' · '+m.department:''}</span>${m.contact?`<span style="color:var(--teal);font-size:11px;margin-left:auto">${m.contact}</span>`:''}</div>`).join('')}</div>` : '<div style="font-size:13px;color:var(--teal);margin-bottom:12px">아직 참여자가 없어요. 첫 번째로 참여해보세요!</div>'}
+        ${!joined ? `<div style="display:flex;gap:8px;align-items:center"><input id="study-contact-input" style="flex:1;border:1px solid #80CBC4;border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;outline:none" placeholder="연락처 (선택 - 오픈카톡 링크 등)"><button class="btn btn-sm btn-g" onclick="joinStudyGroup('${noteId}')">참여하기</button></div>` : `<button class="btn btn-sm btn-d" style="font-size:12px" onclick="leaveStudyGroup('${noteId}')">그룹 탈퇴</button>`}
+      </div>`;
+  } catch (e) {
+    el.innerHTML = '';
+  }
+}
+
+async function joinStudyGroup(noteId) {
+  const contact = document.getElementById('study-contact-input')?.value.trim();
+  try {
+    const data = await api('/study/' + noteId + '/join', { method: 'POST', body: JSON.stringify({ contact }) });
+    toast(`스터디 그룹에 참여했어요! 현재 ${data.count}명`, 'ok');
+    loadStudySection(noteId, false);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function leaveStudyGroup(noteId) {
+  if (!confirm('스터디 그룹에서 탈퇴하시겠어요?')) return;
+  try {
+    await api('/study/' + noteId + '/leave', { method: 'DELETE' });
+    toast('스터디 그룹에서 탈퇴했어요.', 'ok');
+    loadStudySection(noteId, false);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ── 스터디 그룹 모달 (내 구매 탭) ──
+let _studyModalNoteId = null;
+async function openStudyGroupModal(noteId, noteTitle) {
+  _studyModalNoteId = noteId;
+  document.getElementById('study-modal-title').textContent = noteTitle;
+  document.getElementById('study-modal-content').innerHTML = '<div class="loading" style="margin:20px auto"></div>';
+  document.getElementById('modal-study').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  await refreshStudyModal(noteId);
+}
+
+async function refreshStudyModal(noteId) {
+  const content = document.getElementById('study-modal-content');
+  try {
+    const data = await api('/study/' + noteId + '/members');
+    const { members, joined, count } = data;
+    content.innerHTML = `
+      <div style="font-size:14px;font-weight:600;color:var(--teal);margin-bottom:12px">현재 ${count}명 참여 중</div>
+      ${members.length ? `<div style="margin-bottom:16px;display:flex;flex-direction:column;gap:8px">${members.map(m=>`<div style="font-size:13px;background:var(--cream-d);border-radius:8px;padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-weight:600">${m.name}</span><span style="color:var(--ink-m);font-size:11px">${m.school||''}</span>${m.contact?`<span style="color:var(--teal);font-size:12px;margin-left:auto">${m.contact}</span>`:''}</div>`).join('')}</div>` : '<div style="color:var(--ink-m);font-size:13px;margin-bottom:16px">아직 참여자가 없어요.</div>'}
+      ${!joined ? `<div style="border-top:1px solid var(--bd);padding-top:16px"><div style="font-size:13px;font-weight:600;margin-bottom:8px">스터디 그룹 참여하기</div><input id="sm-contact" style="width:100%;border:1.5px solid var(--bd);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none;margin-bottom:10px" placeholder="연락처 (선택 - 오픈카톡 링크 등)"><button class="btn btn-g" style="width:100%" onclick="joinStudyGroupModal('${noteId}')">참여하기</button></div>` : `<div style="border-top:1px solid var(--bd);padding-top:14px"><button class="btn btn-d btn-sm" onclick="leaveStudyGroupModal('${noteId}')">그룹 탈퇴</button></div>`}`;
+  } catch (e) {
+    content.innerHTML = `<div style="color:var(--red);font-size:13px">${e.message}</div>`;
+  }
+}
+
+async function joinStudyGroupModal(noteId) {
+  const contact = document.getElementById('sm-contact')?.value.trim();
+  try {
+    const data = await api('/study/' + noteId + '/join', { method: 'POST', body: JSON.stringify({ contact }) });
+    toast(`스터디 그룹에 참여했어요! 현재 ${data.count}명`, 'ok');
+    refreshStudyModal(noteId);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function leaveStudyGroupModal(noteId) {
+  if (!confirm('스터디 그룹에서 탈퇴하시겠어요?')) return;
+  try {
+    await api('/study/' + noteId + '/leave', { method: 'DELETE' });
+    toast('탈퇴했어요.', 'ok');
+    refreshStudyModal(noteId);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function closeStudyModal(e) {
+  if (e && e.target !== document.getElementById('modal-study')) return;
+  document.getElementById('modal-study').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ── 성적 인증 신청 (판매자) ──
+function openGradeBadgeForm(noteId) {
+  document.getElementById('gb-note-id').value = noteId;
+  document.getElementById('gb-grade').value = '';
+  document.getElementById('gb-file').value = '';
+  document.getElementById('modal-grade-badge').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeGradeBadgeModal(e) {
+  if (e && e.target !== document.getElementById('modal-grade-badge')) return;
+  document.getElementById('modal-grade-badge').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function submitGradeBadge() {
+  const noteId = document.getElementById('gb-note-id').value;
+  const grade = document.getElementById('gb-grade').value.trim();
+  const file = document.getElementById('gb-file').files[0];
+  if (!grade) { toast('학점을 입력해주세요.', 'err'); return; }
+  if (!file) { toast('스크린샷을 선택해주세요.', 'err'); return; }
+  const btn = document.getElementById('gb-submit-btn');
+  btn.disabled = true; btn.textContent = '제출 중...';
+  try {
+    const token = localStorage.getItem('nm_token');
+    const formData = new FormData();
+    formData.append('screenshot', file);
+    formData.append('grade', grade);
+    const res = await fetch(API + '/study/' + noteId + '/grade-badge', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '제출 실패');
+    toast(data.message || '성적 인증 신청 완료!', 'ok');
+    document.getElementById('modal-grade-badge').classList.remove('open');
+    document.body.style.overflow = '';
+  } catch (e) { toast(e.message, 'err'); }
+  finally { btn.disabled = false; btn.textContent = '신청 제출'; }
+}
+
+// ── 족보 분석 업로드 (판매자) ──
+function openExamAnalysisUpload(noteId) {
+  document.getElementById('ea-note-id').value = noteId;
+  document.getElementById('ea-file').value = '';
+  document.getElementById('modal-exam-analysis').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeExamAnalysisModal(e) {
+  if (e && e.target !== document.getElementById('modal-exam-analysis')) return;
+  document.getElementById('modal-exam-analysis').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function submitExamAnalysis() {
+  const noteId = document.getElementById('ea-note-id').value;
+  const file = document.getElementById('ea-file').files[0];
+  if (!file) { toast('파일을 선택해주세요.', 'err'); return; }
+  const btn = document.getElementById('ea-submit-btn');
+  btn.disabled = true; btn.textContent = 'AI 분석 중... (최대 1분)';
+  try {
+    const token = localStorage.getItem('nm_token');
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('note_id', noteId);
+    const res = await fetch(API + '/ai/exam-analysis', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '분석 실패');
+    toast('족보 분석이 완료되었어요!', 'ok');
+    document.getElementById('modal-exam-analysis').classList.remove('open');
+    document.body.style.overflow = '';
+  } catch (e) { toast(e.message, 'err'); }
+  finally { btn.disabled = false; btn.textContent = 'AI 분석 시작'; }
+}
+
+// ── 관리자: 성적인증 배지 관리 ──
+async function loadAdminBadges() {
+  const tbody = document.getElementById('badges-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7" class="loading"></td></tr>';
+  try {
+    const data = await api('/admin/grade-badges');
+    const badges = data.badges || [];
+    tbody.innerHTML = !badges.length
+      ? '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--ink-m)">신청 내역이 없어요</td></tr>'
+      : badges.map(b => `<tr>
+        <td class="tb" style="cursor:pointer;color:var(--a)" onclick="openNote('${b.note_id}')">${b.note_title}</td>
+        <td class="tm">${b.seller_name}</td>
+        <td class="tb">${b.grade}</td>
+        <td><span class="badge ${b.status==='approved'?'bl':b.status==='rejected'?'br':'bp'}">${b.status==='approved'?'승인':b.status==='rejected'?'거절':'검토중'}</span></td>
+        <td class="tm">${(b.created_at||'').slice(0,10)}</td>
+        <td class="tm" style="font-size:12px">${b.admin_note||'-'}</td>
+        <td><div class="at-acts">
+          ${b.status!=='approved'?`<button class="btn btn-sm btn-g" onclick="processBadge('${b.id}','approve')">승인</button>`:''}
+          ${b.status!=='rejected'?`<button class="btn btn-sm btn-d" onclick="processBadge('${b.id}','reject')">거절</button>`:''}
+        </div></td>
+      </tr>`).join('');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function processBadge(id, action) {
+  const admin_note = action === 'reject' ? (prompt('거절 사유 (선택사항):') || '') : '';
+  try {
+    await api('/admin/grade-badges/' + id, { method: 'PATCH', body: JSON.stringify({ action, admin_note }) });
+    toast(action === 'approve' ? '승인되었어요.' : '거절되었어요.', 'ok');
+    loadAdminBadges();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
 // ── TOAST ──
 let _tt = null;
 function toast(msg, type = 'd') {
@@ -1390,8 +1678,10 @@ function toast(msg, type = 'd') {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeNM(); closeAM(); closeRepModal(); closeQA();
-    document.getElementById('modal-rep').classList.remove('open');
-    document.getElementById('modal-qa').classList.remove('open');
+    ['modal-rep','modal-qa','modal-study','modal-grade-badge','modal-exam-analysis'].forEach(id => {
+      document.getElementById(id)?.classList.remove('open');
+    });
+    document.body.style.overflow = '';
   }
 });
 

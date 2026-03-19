@@ -330,4 +330,44 @@ router.patch('/users/:id/status', async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────
+// 성적 인증 배지 관리
+// ─────────────────────────────────────────
+
+// GET /api/admin/grade-badges
+router.get('/grade-badges', async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT gb.*, u.name AS seller_name, n.title AS note_title
+      FROM grade_badges gb
+      JOIN users u ON u.id = gb.seller_id
+      JOIN notes n ON n.id = gb.note_id
+      ORDER BY gb.created_at DESC
+    `);
+    res.json({ badges: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '서버 오류가 발생했어요.' });
+  }
+});
+
+// PATCH /api/admin/grade-badges/:id
+router.patch('/grade-badges/:id', async (req, res) => {
+  try {
+    const { action, admin_note } = req.body;
+    if (!['approve', 'reject'].includes(action)) {
+      return res.status(400).json({ error: 'action은 approve 또는 reject여야 해요.' });
+    }
+    const status = action === 'approve' ? 'approved' : 'rejected';
+    await db.query(
+      'UPDATE grade_badges SET status=$1, admin_note=$2 WHERE id=$3',
+      [status, admin_note || null, req.params.id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '서버 오류가 발생했어요.' });
+  }
+});
+
 module.exports = router;
