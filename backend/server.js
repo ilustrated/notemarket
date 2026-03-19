@@ -22,6 +22,7 @@ app.get('/api/health', (req, res) => res.json({
     db: !!process.env.DATABASE_URL,
     jwt: !!process.env.JWT_ACCESS_SECRET,
     r2: !!process.env.R2_ACCOUNT_ID,
+    r2_public_url: process.env.R2_PUBLIC_URL || null,
     nicepay: !!process.env.NICEPAY_CLIENT_ID,
     google: !!process.env.GOOGLE_API_KEY,
   }
