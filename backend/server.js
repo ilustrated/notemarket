@@ -16,6 +16,8 @@ try { app.use('/api/payment', require('./routes/payment')); } catch(e) { console
 try { app.use('/api/admin', require('./routes/admin')); } catch(e) { console.error('admin route error:', e.message); }
 try { app.use('/api/ai', require('./routes/ai')); } catch(e) { console.error('ai route error:', e.message); }
 
+app.get('/api/envkeys', (req, res) => res.json({ keys: Object.keys(process.env).sort() }));
+
 app.get('/api/health', (req, res) => res.json({
   status: 'ok',
   env: {
