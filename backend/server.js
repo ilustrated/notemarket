@@ -9,32 +9,30 @@ const app = express();
 async function initTables() {
   try {
     const { db } = require('./middleware/auth');
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS grade_badges (
-        id SERIAL PRIMARY KEY,
-        note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-        seller_id INTEGER NOT NULL REFERENCES users(id),
-        screenshot_key TEXT NOT NULL,
-        grade TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'pending',
-        admin_note TEXT,
-        created_at TIMESTAMPTZ DEFAULT NOW()
-      );
-      CREATE TABLE IF NOT EXISTS study_group_members (
-        id SERIAL PRIMARY KEY,
-        note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-        user_id INTEGER NOT NULL REFERENCES users(id),
-        contact TEXT,
-        joined_at TIMESTAMPTZ DEFAULT NOW(),
-        UNIQUE(note_id, user_id)
-      );
-      CREATE TABLE IF NOT EXISTS exam_analyses (
-        id SERIAL PRIMARY KEY,
-        note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-        analysis TEXT NOT NULL,
-        created_at TIMESTAMPTZ DEFAULT NOW()
-      );
-    `);
+    await db.query(`CREATE TABLE IF NOT EXISTS grade_badges (
+      id SERIAL PRIMARY KEY,
+      note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+      seller_id INTEGER NOT NULL REFERENCES users(id),
+      screenshot_key TEXT NOT NULL,
+      grade TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      admin_note TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
+    await db.query(`CREATE TABLE IF NOT EXISTS study_group_members (
+      id SERIAL PRIMARY KEY,
+      note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      contact TEXT,
+      joined_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(note_id, user_id)
+    )`);
+    await db.query(`CREATE TABLE IF NOT EXISTS exam_analyses (
+      id SERIAL PRIMARY KEY,
+      note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+      analysis TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
     console.log('DB tables initialized');
   } catch (e) {
     console.error('initTables error:', e.message);
