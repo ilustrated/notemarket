@@ -2,7 +2,7 @@ const express = require('express');
 const { db, authenticate } = require('../middleware/auth');
 const router = express.Router();
 
-// ── 결제 준비 (토스 결제창 열기 전) ──
+// ── 결제 준비 (나이스페이 결제창 열기 전) ──
 // POST /api/payment/prepare
 router.post('/prepare', authenticate, async (req, res) => {
   try {
@@ -20,7 +20,7 @@ router.post('/prepare', authenticate, async (req, res) => {
 
     const n = note.rows[0];
     const orderId = 'order_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-    const fee = Math.round(n.price * 0.2);
+    const fee = Math.round(n.price * 0.1);
     const netAmount = n.price - fee;
 
     // 결제 전 DB에 pending 상태로 저장 (금액 위변조 방지)
@@ -34,7 +34,7 @@ router.post('/prepare', authenticate, async (req, res) => {
       amount: n.price,
       orderName: n.title,
       customerName: req.user.name,
-      clientKey: process.env.TOSS_CLIENT_KEY,
+      clientId: process.env.NICEPAY_CLIENT_ID,
     });
   } catch (err) {
     console.error(err);
@@ -42,11 +42,11 @@ router.post('/prepare', authenticate, async (req, res) => {
   }
 });
 
-// ── 결제 최종 승인 ──
+// ── 결제 최종 승인 (나이스페이) ──
 // POST /api/payment/confirm
 router.post('/confirm', authenticate, async (req, res) => {
   try {
-    const { paymentKey, orderId, amount } = req.body;
+    const { tid, authToken, orderId, amount } = req.body;
 
     // DB에서 주문 확인 (금액 위변조 방지)
     const order = await db.query(
@@ -57,20 +57,20 @@ router.post('/confirm', authenticate, async (req, res) => {
     if (order.rows[0].amount !== amount)
       return res.status(400).json({ error: '결제 금액이 맞지 않아요.' });
 
-    // 토스페이먼츠 서버에 최종 승인 요청
-    const tossResponse = await fetch('https://api.tosspayments.com/v1/payments/confirm', {
+    // 나이스페이 서버에 최종 승인 요청
+    const niceResponse = await fetch(`https://api.nicepay.co.kr/v1/payments/${tid}`, {
       method: 'POST',
       headers: {
-        Authorization: 'Basic ' + Buffer.from(process.env.TOSS_SECRET_KEY + ':').toString('base64'),
+        Authorization: 'Basic ' + Buffer.from(process.env.NICEPAY_CLIENT_ID + ':' + process.env.NICEPAY_SECRET_KEY).toString('base64'),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ paymentKey, orderId, amount }),
+      body: JSON.stringify({ authToken, amount }),
     });
 
-    if (!tossResponse.ok) {
-      const err = await tossResponse.json();
+    const niceResult = await niceResponse.json();
+    if (niceResult.resultCode !== '0000') {
       await db.query("UPDATE transactions SET status='failed' WHERE order_id=$1", [orderId]);
-      return res.status(400).json({ error: err.message || '결제 승인에 실패했어요.' });
+      return res.status(400).json({ error: niceResult.resultMsg || '결제 승인에 실패했어요.' });
     }
 
     // 원자적 DB 업데이트 (트랜잭션)
@@ -78,7 +78,7 @@ router.post('/confirm', authenticate, async (req, res) => {
     try {
       await db.query(
         "UPDATE transactions SET status='completed', payment_key=$1 WHERE order_id=$2",
-        [paymentKey, orderId]
+        [tid, orderId]
       );
       await db.query(
         'UPDATE notes SET download_count = download_count + 1 WHERE id=$1',

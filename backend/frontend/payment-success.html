@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>결제 처리 중 — 노트마켓</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#F7F3ED;--cream-d:#EDE7DC;--ink:#1A1714;--ink-s:#3D3830;--ink-m:#7A7168;
+  --a:#C8841A;--al:#F5C25A;--ab:#FEF5E2;
+  --green:#2E7D32;--green-l:#EDF7EE;
+  --red:#C0392B;--red-l:#FDECEA;
+  --bd:rgba(26,23,20,.12);--shadow-lg:0 8px 40px rgba(26,23,20,.14);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--cream);color:var(--ink);font-family:'Noto Sans KR',sans-serif;font-size:15px;line-height:1.7;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px}
+nav{position:fixed;top:0;left:0;right:0;background:rgba(247,243,237,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);padding:0 5%;display:flex;align-items:center;height:60px}
+.logo{font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;cursor:pointer;letter-spacing:-.5px;text-decoration:none;color:var(--ink)}
+.logo span{color:var(--a)}
+.card{background:#fff;border:1px solid var(--bd);border-radius:20px;padding:52px 48px;max-width:440px;width:100%;text-align:center;box-shadow:var(--shadow-lg)}
+.icon{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 24px}
+.icon-loading{background:var(--ab);animation:pulse 1.2s ease-in-out infinite}
+.icon-ok{background:var(--green-l)}
+.icon-err{background:var(--red-l)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.spinner{width:28px;height:28px;border:3px solid var(--al);border-top-color:var(--a);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+h2{font-family:'Noto Serif KR',serif;font-size:22px;font-weight:700;margin-bottom:10px}
+p{color:var(--ink-m);font-size:14px;line-height:1.8}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s;text-decoration:none;margin-top:28px}
+.btn-p{background:var(--ink);color:var(--cream)}.btn-p:hover{background:var(--a)}
+.btn-s{background:transparent;color:var(--ink);border:1.5px solid var(--bd)}.btn-s:hover{border-color:var(--ink)}
+.note-box{background:var(--cream);border:1px solid var(--bd);border-radius:12px;padding:16px 20px;margin-top:24px;text-align:left}
+.note-box .label{font-size:11px;color:var(--ink-m);font-weight:600;margin-bottom:4px}
+.note-box .val{font-size:15px;font-weight:600}
+.amount{font-family:'Noto Serif KR',serif;font-size:26px;font-weight:700;color:var(--a);margin-top:8px}
+</style>
+</head>
+<body>
+<nav><a class="logo" href="/">노트<span>마켓</span></a></nav>
+
+<div class="card" id="card">
+  <div class="icon icon-loading" id="icon"><div class="spinner"></div></div>
+  <h2 id="title">결제 처리 중...</h2>
+  <p id="desc">잠시만 기다려 주세요.</p>
+</div>
+
+<script>
+const API = 'https://notemarket-production.up.railway.app/api';
+
+async function confirm() {
+  const params = new URLSearchParams(location.search);
+  const authResultCode = params.get('authResultCode');
+  const authResultMsg  = params.get('authResultMsg');
+  const tid            = params.get('tid');
+  const orderId        = params.get('orderId');
+  const amount         = Number(params.get('amount'));
+  const authToken      = params.get('authToken');
+
+  // 나이스페이 인증 자체 실패
+  if (authResultCode !== '0000') {
+    showError(authResultMsg || '결제가 취소되었어요.');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('nm_token');
+    if (!token) { showError('로그인 정보가 없어요. 다시 로그인해 주세요.'); return; }
+
+    const res = await fetch(API + '/payment/confirm', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+      },
+      body: JSON.stringify({ tid, authToken, orderId, amount }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showError(data.error || '결제 승인에 실패했어요.'); return; }
+
+    showSuccess(amount);
+  } catch (e) {
+    showError('네트워크 오류가 발생했어요. 고객센터에 문의해 주세요.');
+  }
+}
+
+function showSuccess(amount) {
+  document.getElementById('icon').className = 'icon icon-ok';
+  document.getElementById('icon').innerHTML = '✓';
+  document.getElementById('title').textContent = '결제가 완료됐어요!';
+  document.getElementById('desc').textContent = '노트 구매가 성공적으로 처리되었어요.';
+
+  const amountEl = document.createElement('div');
+  amountEl.className = 'note-box';
+  amountEl.innerHTML = `<div class="label">결제 금액</div><div class="amount">${amount.toLocaleString()}원</div>`;
+  document.getElementById('card').appendChild(amountEl);
+
+  const btn = document.createElement('a');
+  btn.href = '/';
+  btn.className = 'btn btn-p';
+  btn.textContent = '구매한 노트 확인하기';
+  document.getElementById('card').appendChild(btn);
+}
+
+function showError(msg) {
+  document.getElementById('icon').className = 'icon icon-err';
+  document.getElementById('icon').innerHTML = '✕';
+  document.getElementById('title').textContent = '결제에 실패했어요';
+  document.getElementById('desc').textContent = msg;
+
+  const btn = document.createElement('a');
+  btn.href = '/';
+  btn.className = 'btn btn-s';
+  btn.textContent = '홈으로 돌아가기';
+  document.getElementById('card').appendChild(btn);
+}
+
+confirm();
+</script>
+</body>
+</html>
