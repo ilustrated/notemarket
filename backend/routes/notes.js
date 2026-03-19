@@ -230,7 +230,7 @@ router.get('/:id/download', async (req, res) => {
       return res.status(403).json({ error: '구매 후 다운로드할 수 있어요.' });
 
     const publicUrl = process.env.R2_PUBLIC_URL;
-    if (!publicUrl) return res.status(500).json({ error: 'R2 공개 URL이 설정되지 않았어요.' });
+    if (!publicUrl) return res.status(500).json({ error: 'R2_PUBLIC_URL 없음. 값: ' + String(process.env.R2_PUBLIC_URL) });
 
     res.redirect(`${publicUrl}/${file_key}`);
   } catch (err) {
