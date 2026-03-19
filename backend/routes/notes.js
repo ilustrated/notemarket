@@ -14,6 +14,7 @@ const r2 = new S3Client({
     accessKeyId: process.env.R2_ACCESS_KEY_ID,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
   },
+  forcePathStyle: true, // R2 SSL 인증서 호환 (가상 호스팅 방식 비활성화)
 });
 
 // ── 노트 목록 조회 (검색/필터) ──
