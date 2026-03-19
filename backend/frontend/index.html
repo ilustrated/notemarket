@@ -399,6 +399,7 @@ const API = 'https://notemarket-production.up.railway.app/api';
 
 let cur = null;
 let curNoteId = null;
+let curDownloadUrl = null;
 let activeDept = '';
 let logFilter = 'all';
 
@@ -593,10 +594,22 @@ async function openNote(id) {
     } else adminBanner.innerHTML = '';
 
     const acts = document.getElementById('m-acts');
+    curDownloadUrl = null;
     if (cur?.role === 'admin') {
       acts.innerHTML = `<span style="font-size:12px;color:var(--ink-m);background:var(--cream-d);padding:8px 12px;border-radius:10px">🛡 관리자 뷰</span>${n.status === 'live' ? `<button class="btn btn-sm btn-d" onclick="adminDelNote('${n.id}')">노트 삭제</button>` : '<span class="badge br">삭제됨</span>'}`;
     } else {
-      acts.innerHTML = `<button class="btn-buy" onclick="buyNote()">구매 ${Number(n.price).toLocaleString()}원</button><button class="btn-wl" id="wl-btn" onclick="toggleWishlist()">${isWished(n.id)?'♥':'♡'}</button><button class="btn-rpt" onclick="openRepModal()">🚨 신고</button>`;
+      const wlBtns = `<button class="btn-wl" id="wl-btn" onclick="toggleWishlist()">${isWished(n.id)?'♥':'♡'}</button><button class="btn-rpt" onclick="openRepModal()">🚨 신고</button>`;
+      if (cur) {
+        try {
+          const dlData = await api('/notes/' + n.id + '/download');
+          curDownloadUrl = dlData.downloadUrl;
+          acts.innerHTML = `<button class="btn-buy" onclick="downloadNote()">📥 다운로드</button>${wlBtns}`;
+        } catch {
+          acts.innerHTML = `<button class="btn-buy" onclick="buyNote()">구매 ${Number(n.price).toLocaleString()}원</button>${wlBtns}`;
+        }
+      } else {
+        acts.innerHTML = `<button class="btn-buy" onclick="buyNote()">구매 ${Number(n.price).toLocaleString()}원</button>${wlBtns}`;
+      }
     }
 
     const reviews = typeof n.reviews === 'string' ? JSON.parse(n.reviews) : (n.reviews || []);
@@ -645,6 +658,12 @@ function toggleWishlist() {
   localStorage.setItem('nm_wishlist', JSON.stringify(wl));
   const btn = document.getElementById('wl-btn');
   if (btn) btn.textContent = isWished(curNoteId) ? '♥' : '♡';
+}
+
+// ── 다운로드 ──
+function downloadNote() {
+  if (curDownloadUrl) window.open(curDownloadUrl, '_blank');
+  else toast('다운로드 링크를 찾을 수 없어요.', 'err');
 }
 
 // ── 구매 ──
