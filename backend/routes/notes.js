@@ -47,13 +47,13 @@ router.get('/', async (req, res) => {
       SELECT n.*, u.name AS seller_name,
         COALESCE(AVG(r.rating), 0) AS avg_rating,
         COUNT(r.id) AS review_count,
-        gb.grade AS badge_grade
+        MAX(gb.grade) AS badge_grade
       FROM notes n
       JOIN users u ON u.id = n.seller_id
       LEFT JOIN reviews r ON r.note_id = n.id
       LEFT JOIN grade_badges gb ON gb.note_id = n.id AND gb.status = 'approved'
       WHERE ${where.join(' AND ')}
-      GROUP BY n.id, u.name, gb.grade
+      GROUP BY n.id, u.name
       ORDER BY ${order}
       LIMIT $${pi} OFFSET $${pi + 1}
     `;
@@ -96,13 +96,13 @@ router.get('/:id', async (req, res) => {
             ORDER BY r.created_at DESC
           ) FILTER (WHERE r.id IS NOT NULL), '[]'
         ) AS reviews,
-        gb.grade AS badge_grade
+        MAX(gb.grade) AS badge_grade
       FROM notes n
       JOIN users u ON u.id = n.seller_id
       LEFT JOIN reviews r ON r.note_id = n.id
       LEFT JOIN grade_badges gb ON gb.note_id = n.id AND gb.status = 'approved'
       WHERE n.id = $1 AND ${statusFilter}
-      GROUP BY n.id, u.name, u.school, gb.grade
+      GROUP BY n.id, u.name, u.school
     `, [req.params.id]);
 
     if (!result.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
