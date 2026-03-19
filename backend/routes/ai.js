@@ -1,14 +1,11 @@
 const express = require('express');
-const https = require('https');
 const multer = require('multer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
-const { NodeHttpHandler } = require('@smithy/node-http-handler');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { db, authenticate } = require('../middleware/auth');
 
-// HTTPS 에이전트 재사용 (TLS 세션 유지)
-const httpsAgent = new https.Agent({ keepAlive: true, minVersion: 'TLSv1.2' });
-
+// presigned URL 생성용 (실제 네트워크 요청 없음)
 const r2 = new S3Client({
   region: 'auto',
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -16,7 +13,6 @@ const r2 = new S3Client({
     accessKeyId: process.env.R2_ACCESS_KEY_ID,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
   },
-  requestHandler: new NodeHttpHandler({ httpsAgent }),
 });
 
 const router = express.Router();
@@ -64,14 +60,17 @@ router.post('/qa', authenticate, async (req, res) => {
     if (!txRes.rows[0] && note.seller_id !== req.user.id)
       return res.status(403).json({ error: '구매한 노트에만 질문할 수 있어요.' });
 
-    // R2에서 파일 다운로드
-    const s3Res = await r2.send(new GetObjectCommand({
+    // Presigned URL 생성 (로컬 서명, 네트워크 요청 없음)
+    const presignedUrl = await getSignedUrl(r2, new GetObjectCommand({
       Bucket: process.env.R2_PRIVATE_BUCKET,
       Key: note.file_key,
-    }));
-    const chunks = [];
-    for await (const chunk of s3Res.Body) chunks.push(chunk);
-    const base64 = Buffer.concat(chunks).toString('base64');
+    }), { expiresIn: 300 });
+
+    // Node.js 내장 fetch로 다운로드 (AWS SDK HTTP 클라이언트 우회)
+    const fileResponse = await fetch(presignedUrl);
+    if (!fileResponse.ok) throw new Error(`파일 다운로드 실패: ${fileResponse.status}`);
+    const arrayBuffer = await fileResponse.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
 
     const ext = note.file_key.split('.').pop().toLowerCase();
     const isPDF = ext === 'pdf';
@@ -79,7 +78,6 @@ router.post('/qa', authenticate, async (req, res) => {
     const mimeType = isPDF ? 'application/pdf' : (imgTypes[ext] || 'image/jpeg');
 
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
-
     const result = await model.generateContent([
       { inlineData: { data: base64, mimeType } },
       `이 노트를 참고해서 다음 질문에 답해주세요. 노트에 없는 내용이면 솔직하게 말해주세요.\n\n질문: ${question}`,
