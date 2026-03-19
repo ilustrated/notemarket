@@ -1,34 +1,21 @@
 const express = require('express');
 const multer = require('multer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { db, authenticate } = require('../middleware/auth');
-
-const r2 = new S3Client({
-  region: 'auto',
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-  },
-  forcePathStyle: true,
-});
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
-// R2에서 SDK로 직접 파일 읽기 (presigned URL + http 클라이언트 없이)
+// R2 공개 URL로 파일 읽기
 async function getFileFromR2(key) {
-  const response = await r2.send(new GetObjectCommand({
-    Bucket: process.env.R2_PRIVATE_BUCKET,
-    Key: key,
-  }));
-  const chunks = [];
-  for await (const chunk of response.Body) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-  return { buffer: Buffer.concat(chunks), contentType: response.ContentType };
+  const publicUrl = process.env.R2_PUBLIC_URL;
+  if (!publicUrl) throw new Error('R2 공개 URL이 설정되지 않았어요.');
+  const r2Res = await fetch(`${publicUrl}/${key}`);
+  if (!r2Res.ok) throw new Error(`파일 다운로드 실패: ${r2Res.status}`);
+  const buffer = Buffer.from(await r2Res.arrayBuffer());
+  const contentType = r2Res.headers.get('content-type') || 'application/octet-stream';
+  return { buffer, contentType };
 }
 
 // POST /api/ai/extract
@@ -70,7 +57,7 @@ router.post('/qa', authenticate, async (req, res) => {
     if (!txRes.rows[0] && note.seller_id !== req.user.id)
       return res.status(403).json({ error: '구매한 노트에만 질문할 수 있어요.' });
 
-    // SDK로 직접 R2에서 파일 읽기 (presigned URL 불필요)
+    // R2 공개 URL로 파일 읽기
     const { buffer: fileBuffer } = await getFileFromR2(note.file_key);
     const base64 = fileBuffer.toString('base64');
     const ext = note.file_key.split('.').pop().toLowerCase();

@@ -229,25 +229,10 @@ router.get('/:id/download', async (req, res) => {
     if (!tx.rows[0] && seller_id !== userId && userRole !== 'admin')
       return res.status(403).json({ error: '구매 후 다운로드할 수 있어요.' });
 
-    const ext = file_key.split('.').pop().toLowerCase();
-    const filename = encodeURIComponent(title + '.' + ext);
+    const publicUrl = process.env.R2_PUBLIC_URL;
+    if (!publicUrl) return res.status(500).json({ error: 'R2 공개 URL이 설정되지 않았어요.' });
 
-    // presigned URL 없이 SDK로 직접 R2에서 파일 읽기
-    const sdkRes = await r2.send(new GetObjectCommand({
-      Bucket: process.env.R2_PRIVATE_BUCKET,
-      Key: file_key,
-    }));
-
-    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
-    res.setHeader('Content-Type', sdkRes.ContentType || 'application/octet-stream');
-    if (sdkRes.ContentLength) res.setHeader('Content-Length', String(sdkRes.ContentLength));
-
-    // Body를 청크 단위로 읽어서 응답
-    const chunks = [];
-    for await (const chunk of sdkRes.Body) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-    }
-    res.end(Buffer.concat(chunks));
+    res.redirect(`${publicUrl}/${file_key}`);
   } catch (err) {
     console.error('Download error:', err);
     if (!res.headersSent) res.status(500).json({ error: '다운로드 실패: ' + err.message });
