@@ -370,7 +370,22 @@ footer a{color:var(--al);text-decoration:none}
         <div style="font-size:13px;font-weight:700;color:#1565C0;margin-bottom:10px">📊 AI 족보 분석</div>
         <div id="m-exam-text" style="font-size:13px;color:#1A1714;line-height:1.8;white-space:pre-wrap"></div>
       </div>
-      <div class="rvs"><div class="ms-t">구매자 리뷰</div><div id="m-rvs"></div></div>
+      <div class="rvs">
+        <div class="ms-t">구매자 리뷰</div>
+        <div id="m-review-form" style="display:none;background:var(--cream);border:1.5px solid var(--bd);border-radius:12px;padding:16px 18px;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px">리뷰 작성</div>
+          <div style="display:flex;gap:6px;margin-bottom:10px" id="rv-stars-wrap">
+            <span class="rv-star-btn" data-v="1" onclick="setRvStar(1)" style="font-size:24px;cursor:pointer;color:var(--bd)">★</span>
+            <span class="rv-star-btn" data-v="2" onclick="setRvStar(2)" style="font-size:24px;cursor:pointer;color:var(--bd)">★</span>
+            <span class="rv-star-btn" data-v="3" onclick="setRvStar(3)" style="font-size:24px;cursor:pointer;color:var(--bd)">★</span>
+            <span class="rv-star-btn" data-v="4" onclick="setRvStar(4)" style="font-size:24px;cursor:pointer;color:var(--bd)">★</span>
+            <span class="rv-star-btn" data-v="5" onclick="setRvStar(5)" style="font-size:24px;cursor:pointer;color:var(--bd)">★</span>
+          </div>
+          <textarea id="rv-content" placeholder="노트에 대한 솔직한 리뷰를 남겨주세요." style="width:100%;border:1.5px solid var(--bd);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;resize:vertical;min-height:80px;box-sizing:border-box"></textarea>
+          <button onclick="submitReview()" class="btn btn-p" style="margin-top:10px;width:100%;padding:11px">리뷰 등록</button>
+        </div>
+        <div id="m-rvs"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -691,6 +706,8 @@ async function openNote(id) {
 
     const acts = document.getElementById('m-acts');
     curDownloadUrl = null;
+    let isPurchased = false;
+    document.getElementById('m-review-form').style.display = 'none';
     if (cur?.role === 'admin') {
       acts.innerHTML = `<span style="font-size:12px;color:var(--ink-m);background:var(--cream-d);padding:8px 12px;border-radius:10px">🛡 관리자 뷰</span>${n.status === 'live' ? `<button class="btn btn-sm btn-d" onclick="adminDelNote('${n.id}')">노트 삭제</button>` : '<span class="badge br">삭제됨</span>'}`;
     } else {
@@ -699,9 +716,9 @@ async function openNote(id) {
         try {
           const { purchased } = await api('/notes/' + n.id + '/purchase-check');
           const isSeller = n.seller_id === cur.id;
+          isPurchased = purchased;
           if (purchased || isSeller) {
             acts.innerHTML = `<button class="btn-buy" onclick="downloadNote()">📥 다운로드</button><button class="btn btn-a btn-sm" style="padding:14px 16px;font-size:14px" onclick="openQA('${n.id}','${(n.title||'').replace(/'/g,'&apos;')}')">✨ AI 질문</button>${wlBtns}`;
-            // 스터디 그룹 섹션 로드
             loadStudySection(n.id, isSeller);
           } else {
             acts.innerHTML = `<button class="btn-buy" onclick="buyNote()">구매 ${Number(n.price).toLocaleString()}원</button>${wlBtns}`;
@@ -715,9 +732,18 @@ async function openNote(id) {
     }
 
     const reviews = typeof n.reviews === 'string' ? JSON.parse(n.reviews) : (n.reviews || []);
-    document.getElementById('m-rvs').innerHTML = reviews.length
-      ? reviews.map(r => `<div class="rv-item"><div class="rv-top"><span style="font-size:13px;font-weight:500">${r.name||'익명'}</span><span class="rv-stars">${'★'.repeat(r.rating||5)}</span></div><div class="rv-txt">${r.content||r.text||''}</div></div>`).join('')
-      : '<div style="color:var(--ink-m);font-size:14px;padding:16px 0">아직 리뷰가 없어요.</div>';
+    renderReviews(reviews);
+
+    // 구매자인 경우 리뷰 작성 폼 표시 (이미 리뷰 썼으면 숨김)
+    if (isPurchased) {
+      const alreadyReviewed = reviews.some(r => r.name === cur?.name);
+      if (!alreadyReviewed) {
+        document.getElementById('m-review-form').style.display = 'block';
+        window._rvNoteId = n.id;
+        window._rvRating = 0;
+        setRvStar(0);
+      }
+    }
   } catch (e) {
     document.getElementById('m-title').textContent = '노트를 불러올 수 없어요.';
     toast(e.message, 'err');
@@ -727,6 +753,46 @@ function closeNM(e) {
   if (!e || e.target === document.getElementById('modal-note')) {
     document.getElementById('modal-note').classList.remove('open');
     document.body.style.overflow = '';
+  }
+}
+
+function renderReviews(reviews) {
+  document.getElementById('m-rvs').innerHTML = reviews.length
+    ? reviews.map(r => `<div class="rv-item"><div class="rv-top"><span style="font-size:13px;font-weight:500">${r.name||'익명'}</span><span class="rv-stars">${'★'.repeat(r.rating||5)}</span></div><div class="rv-txt">${r.content||r.text||''}</div></div>`).join('')
+    : '<div style="color:var(--ink-m);font-size:14px;padding:16px 0">아직 리뷰가 없어요.</div>';
+}
+
+function setRvStar(v) {
+  window._rvRating = v;
+  document.querySelectorAll('.rv-star-btn').forEach(el => {
+    el.style.color = Number(el.dataset.v) <= v ? 'var(--a)' : 'var(--bd)';
+  });
+}
+
+async function submitReview() {
+  const rating = window._rvRating || 0;
+  const content = document.getElementById('rv-content').value.trim();
+  if (!rating) { toast('별점을 선택해주세요.', 'err'); return; }
+  if (!content) { toast('리뷰 내용을 입력해주세요.', 'err'); return; }
+  const token = localStorage.getItem('nm_token');
+  try {
+    const res = await fetch(`/api/notes/${window._rvNoteId}/reviews`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ rating, content }),
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || '오류가 발생했어요.', 'err'); return; }
+    toast('리뷰가 등록됐어요!');
+    document.getElementById('m-review-form').style.display = 'none';
+    // 리뷰 목록 새로고침
+    const nr = await fetch(`/api/notes/${window._rvNoteId}`);
+    const nd = await nr.json();
+    const reviews = typeof nd.note.reviews === 'string' ? JSON.parse(nd.note.reviews) : (nd.note.reviews || []);
+    renderReviews(reviews);
+    document.getElementById('m-rating').textContent = `★ ${nd.note.avg_rating > 0 ? Number(nd.note.avg_rating).toFixed(1) : '-'} (${nd.note.review_count}개 리뷰)`;
+  } catch (e) {
+    toast('오류: ' + e.message, 'err');
   }
 }
 
