@@ -36,7 +36,10 @@ app.use((req, res) => res.sendFile(path.join(__dirname, 'frontend', 'index.html'
 // DB 테이블 자동 생성 후 서버 시작
 async function initTables() {
   const { db } = require('./middleware/auth');
-  await db.query(`CREATE TABLE IF NOT EXISTS grade_badges (
+  await db.query(`DROP TABLE IF EXISTS grade_badges`);
+  await db.query(`DROP TABLE IF EXISTS study_group_members`);
+  await db.query(`DROP TABLE IF EXISTS exam_analyses`);
+  await db.query(`CREATE TABLE grade_badges (
     id SERIAL PRIMARY KEY,
     note_id UUID NOT NULL,
     seller_id UUID NOT NULL,
@@ -46,7 +49,7 @@ async function initTables() {
     admin_note TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
   )`);
-  await db.query(`CREATE TABLE IF NOT EXISTS study_group_members (
+  await db.query(`CREATE TABLE study_group_members (
     id SERIAL PRIMARY KEY,
     note_id UUID NOT NULL,
     user_id UUID NOT NULL,
@@ -54,7 +57,7 @@ async function initTables() {
     joined_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(note_id, user_id)
   )`);
-  await db.query(`CREATE TABLE IF NOT EXISTS exam_analyses (
+  await db.query(`CREATE TABLE exam_analyses (
     id SERIAL PRIMARY KEY,
     note_id UUID NOT NULL,
     analysis TEXT NOT NULL,
