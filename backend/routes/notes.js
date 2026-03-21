@@ -2,11 +2,10 @@ const express  = require('express');
 const https    = require('https');
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const { NodeHttpHandler } = require('@smithy/node-http-handler');
 const { db, authenticate, requireAdmin } = require('../middleware/auth');
 const router = express.Router();
 
-// Cloudflare R2 클라이언트 설정 (SSL 오류 방지 포함)
+// Cloudflare R2 클라이언트 설정
 const r2 = new S3Client({
   region: 'auto',
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -14,9 +13,7 @@ const r2 = new S3Client({
     accessKeyId: process.env.R2_ACCESS_KEY_ID,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
   },
-  requestHandler: new NodeHttpHandler({
-    httpsAgent: new https.Agent({ rejectUnauthorized: false })
-  })
+  tls: false
 });
 
 // ── 노트 목록 조회 (검색/필터) ──
@@ -171,7 +168,7 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
-// ── 다운로드 (서버 스트리밍 방식 - CORS 문제 없음) ──
+// ── 다운로드 (Presigned URL 방식) ──
 // GET /api/notes/:id/download
 router.get('/:id/download', authenticate, async (req, res) => {
   try {
@@ -190,22 +187,28 @@ router.get('/:id/download', authenticate, async (req, res) => {
     const fileKey = note.rows[0].file_key;
     const title   = note.rows[0].title || 'note';
 
-    // R2에서 파일을 서버로 받아서 클라이언트에 스트리밍
-    const { Body, ContentType, ContentLength } = await r2.send(new GetObjectCommand({
+    // R2에서 파일을 직접 가져와서 서버에서 클라이언트로 전송
+    const command = new GetObjectCommand({
       Bucket: process.env.R2_PRIVATE_BUCKET,
       Key: fileKey,
-    }));
+      ResponseContentDisposition: `attachment; filename*=UTF-8''${encodeURIComponent(title)}.pdf`,
+    });
 
-    const filename = encodeURIComponent(title) + '.pdf';
-    res.setHeader('Content-Type', ContentType || 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
-    if (ContentLength) res.setHeader('Content-Length', ContentLength);
+    const response = await r2.send(command);
+    const chunks = [];
+    for await (const chunk of response.Body) {
+      chunks.push(chunk);
+    }
+    const buffer = Buffer.concat(chunks);
 
-    // 스트림으로 전송
-    Body.pipe(res);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(title)}.pdf`);
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.send(buffer);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: '서버 오류가 발생했어요.' });
+    console.error('다운로드 오류:', err);
+    res.status(500).json({ error: '다운로드 실패: ' + err.message });
   }
 });
 
