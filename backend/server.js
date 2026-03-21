@@ -3,22 +3,16 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const express = require('express');
 const cors    = require('cors');
+const path    = require('path');
 require('dotenv').config();
 
 const app = express();
 
-// CORS 설정 (프론트엔드에서 API 호출 허용)
-app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL || 'http://localhost:5500',
-    'http://localhost:5500',
-    'http://127.0.0.1:5500',
-    // 배포 후 실제 도메인 추가: 'https://notemarket.co.kr'
-  ],
-  credentials: true
-}));
-
+app.use(cors());
 app.use(express.json());
+
+// 프론트엔드 정적 파일 서빙
+app.use(express.static(path.join(__dirname, 'frontend')));
 
 // API 라우터 연결
 app.use('/api/auth',    require('./routes/auth'));
@@ -31,6 +25,12 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+// 모든 경로에서 index.html 반환
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+});
+
 // 에러 처리
 app.use((err, req, res, next) => {
   console.error('서버 오류:', err.message);
@@ -39,5 +39,5 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`노트마켓 서버 실행 중: http://localhost:${PORT}`);
+  console.log('노트마켓 서버 실행 중: http://localhost:' + PORT);
 });
