@@ -167,33 +167,45 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
-// ── 다운로드 URL 발급 (Presigned URL → 새탭 열기 방식) ──
+// ── 다운로드 (서버 프록시 버퍼 방식) ──
 // GET /api/notes/:id/download
 router.get('/:id/download', authenticate, async (req, res) => {
   try {
-    // 구매 내역 확인
     const tx = await db.query(
       "SELECT id FROM transactions WHERE note_id=$1 AND buyer_id=$2 AND status='completed'",
       [req.params.id, req.user.id]
     );
-    // 관리자는 구매 없이도 다운로드 가능
     if (!tx.rows[0] && req.user.role !== 'admin')
       return res.status(403).json({ error: '구매 후 다운로드할 수 있어요.' });
 
     const note = await db.query('SELECT file_key, title FROM notes WHERE id = $1', [req.params.id]);
     if (!note.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
 
-    // Presigned URL 발급 (1시간 유효)
-    const downloadUrl = await getSignedUrl(r2, new GetObjectCommand({
+    const title = note.rows[0].title || 'note';
+    const filename = encodeURIComponent(title) + '.pdf';
+
+    // 서버가 R2에서 파일 받아서 버퍼로 합치기 (TLS 우회 적용됨)
+    const s3res = await r2.send(new GetObjectCommand({
       Bucket: process.env.R2_PRIVATE_BUCKET,
       Key: note.rows[0].file_key,
-    }), { expiresIn: 3600 });
+    }));
 
-    // URL을 클라이언트에 전달 (새 탭에서 직접 열기)
-    res.json({ downloadUrl, title: note.rows[0].title });
+    const chunks = [];
+    for await (const chunk of s3res.Body) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    const buffer = Buffer.concat(chunks);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    return res.send(buffer);
   } catch (err) {
-    console.error('다운로드 오류:', err);
-    res.status(500).json({ error: '다운로드 실패: ' + err.message });
+    console.error('다운로드 오류:', err.message);
+    if (!res.headersSent) {
+      return res.status(500).json({ error: '다운로드 실패: ' + err.message });
+    }
   }
 });
 
