@@ -167,7 +167,7 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
-// ── 다운로드 (Presigned URL 방식) ──
+// ── 다운로드 URL 발급 (Presigned URL → 새탭 열기 방식) ──
 // GET /api/notes/:id/download
 router.get('/:id/download', authenticate, async (req, res) => {
   try {
@@ -183,28 +183,14 @@ router.get('/:id/download', authenticate, async (req, res) => {
     const note = await db.query('SELECT file_key, title FROM notes WHERE id = $1', [req.params.id]);
     if (!note.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
 
-    const fileKey = note.rows[0].file_key;
-    const title   = note.rows[0].title || 'note';
-
-    // R2에서 파일을 직접 가져와서 서버에서 클라이언트로 전송
-    const command = new GetObjectCommand({
+    // Presigned URL 발급 (1시간 유효)
+    const downloadUrl = await getSignedUrl(r2, new GetObjectCommand({
       Bucket: process.env.R2_PRIVATE_BUCKET,
-      Key: fileKey,
-      ResponseContentDisposition: `attachment; filename*=UTF-8''${encodeURIComponent(title)}.pdf`,
-    });
+      Key: note.rows[0].file_key,
+    }), { expiresIn: 3600 });
 
-    const response = await r2.send(command);
-    const chunks = [];
-    for await (const chunk of response.Body) {
-      chunks.push(chunk);
-    }
-    const buffer = Buffer.concat(chunks);
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(title)}.pdf`);
-    res.setHeader('Content-Length', buffer.length);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.send(buffer);
+    // URL을 클라이언트에 전달 (새 탭에서 직접 열기)
+    res.json({ downloadUrl, title: note.rows[0].title });
   } catch (err) {
     console.error('다운로드 오류:', err);
     res.status(500).json({ error: '다운로드 실패: ' + err.message });
