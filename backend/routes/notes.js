@@ -1,12 +1,12 @@
 const express  = require('express');
-const multer   = require('multer');
+const https    = require('https');
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const { NodeHttpHandler } = require('@smithy/node-http-handler');
 const { db, authenticate, requireAdmin } = require('../middleware/auth');
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
-// Cloudflare R2 클라이언트 설정
+// Cloudflare R2 클라이언트 설정 (SSL 오류 방지 포함)
 const r2 = new S3Client({
   region: 'auto',
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -14,7 +14,9 @@ const r2 = new S3Client({
     accessKeyId: process.env.R2_ACCESS_KEY_ID,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
   },
-  forcePathStyle: true, // R2 SSL 인증서 호환 (가상 호스팅 방식 비활성화)
+  requestHandler: new NodeHttpHandler({
+    httpsAgent: new https.Agent({ rejectUnauthorized: false })
+  })
 });
 
 // ── 노트 목록 조회 (검색/필터) ──
@@ -46,12 +48,10 @@ router.get('/', async (req, res) => {
     const sql = `
       SELECT n.*, u.name AS seller_name,
         COALESCE(AVG(r.rating), 0) AS avg_rating,
-        COUNT(r.id) AS review_count,
-        MAX(gb.grade) AS badge_grade
+        COUNT(r.id) AS review_count
       FROM notes n
       JOIN users u ON u.id = n.seller_id
       LEFT JOIN reviews r ON r.note_id = n.id
-      LEFT JOIN grade_badges gb ON gb.note_id = n.id AND gb.status = 'approved'
       WHERE ${where.join(' AND ')}
       GROUP BY n.id, u.name
       ORDER BY ${order}
@@ -63,7 +63,7 @@ router.get('/', async (req, res) => {
     res.json({ notes: result.rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: '서버 오류가 발생했어요.', detail: err.message });
+    res.status(500).json({ error: '서버 오류가 발생했어요.' });
   }
 });
 
@@ -95,12 +95,10 @@ router.get('/:id', async (req, res) => {
             JSON_BUILD_OBJECT('name', r.reviewer_name, 'rating', r.rating, 'content', r.content, 'created_at', r.created_at)
             ORDER BY r.created_at DESC
           ) FILTER (WHERE r.id IS NOT NULL), '[]'
-        ) AS reviews,
-        MAX(gb.grade) AS badge_grade
+        ) AS reviews
       FROM notes n
       JOIN users u ON u.id = n.seller_id
       LEFT JOIN reviews r ON r.note_id = n.id
-      LEFT JOIN grade_badges gb ON gb.note_id = n.id AND gb.status = 'approved'
       WHERE n.id = $1 AND ${statusFilter}
       GROUP BY n.id, u.name, u.school
     `, [req.params.id]);
@@ -110,26 +108,6 @@ router.get('/:id', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: '서버 오류가 발생했어요.' });
-  }
-});
-
-// ── 파일 직접 업로드 (멀티파트) ──
-// POST /api/notes/upload
-router.post('/upload', authenticate, upload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: '파일이 필요해요.' });
-    const ext = (req.file.originalname || 'note.pdf').split('.').pop();
-    const key = `notes/${req.user.id}/${Date.now()}.${ext}`;
-    await r2.send(new PutObjectCommand({
-      Bucket: process.env.R2_PRIVATE_BUCKET,
-      Key: key,
-      Body: req.file.buffer,
-      ContentType: req.file.mimetype || 'application/pdf',
-    }));
-    res.json({ key });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: '파일 업로드 실패.' });
   }
 });
 
@@ -193,53 +171,41 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
-// ── 구매 여부 확인 ──
-// GET /api/notes/:id/purchase-check
-router.get('/:id/purchase-check', authenticate, async (req, res) => {
+// ── 다운로드 (서버 스트리밍 방식 - CORS 문제 없음) ──
+// GET /api/notes/:id/download
+router.get('/:id/download', authenticate, async (req, res) => {
   try {
+    // 구매 내역 확인
     const tx = await db.query(
       "SELECT id FROM transactions WHERE note_id=$1 AND buyer_id=$2 AND status='completed'",
       [req.params.id, req.user.id]
     );
-    res.json({ purchased: !!tx.rows[0] || req.user.role === 'admin' });
-  } catch (err) {
-    res.status(500).json({ error: '서버 오류가 발생했어요.' });
-  }
-});
-
-// ── 파일 다운로드 (SDK로 R2에서 직접 읽어 클라이언트로 스트리밍) ──
-// GET /api/notes/:id/download  (Authorization 헤더 또는 ?token= 쿼리 파라미터)
-router.get('/:id/download', async (req, res) => {
-  try {
-    const jwt = require('jsonwebtoken');
-    const rawToken = (req.headers.authorization || '').replace('Bearer ', '') || req.query.token || '';
-    let userId, userRole;
-    try {
-      const decoded = jwt.verify(rawToken, process.env.JWT_ACCESS_SECRET);
-      const u = await db.query('SELECT id, role FROM users WHERE id=$1 AND status=$2', [decoded.id, 'active']);
-      if (!u.rows[0]) return res.status(401).json({ error: '인증 오류' });
-      userId = u.rows[0].id;
-      userRole = u.rows[0].role;
-    } catch { return res.status(401).json({ error: '로그인이 필요해요.' }); }
-
-    const noteRes = await db.query('SELECT file_key, title, seller_id FROM notes WHERE id = $1', [req.params.id]);
-    if (!noteRes.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
-    const { file_key, title, seller_id } = noteRes.rows[0];
-
-    const tx = await db.query(
-      "SELECT id FROM transactions WHERE note_id=$1 AND buyer_id=$2 AND status='completed'",
-      [req.params.id, userId]
-    );
-    if (!tx.rows[0] && seller_id !== userId && userRole !== 'admin')
+    // 관리자는 구매 없이도 다운로드 가능
+    if (!tx.rows[0] && req.user.role !== 'admin')
       return res.status(403).json({ error: '구매 후 다운로드할 수 있어요.' });
 
-    const publicUrl = process.env.R2_PUBLIC_URL || 'https://pub-4d66a8676c2e4bc2b3c13d3ce03e2152.r2.dev';
+    const note = await db.query('SELECT file_key, title FROM notes WHERE id = $1', [req.params.id]);
+    if (!note.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
 
+    const fileKey = note.rows[0].file_key;
+    const title   = note.rows[0].title || 'note';
 
-    res.redirect(`${publicUrl}/${file_key}`);
+    // R2에서 파일을 서버로 받아서 클라이언트에 스트리밍
+    const { Body, ContentType, ContentLength } = await r2.send(new GetObjectCommand({
+      Bucket: process.env.R2_PRIVATE_BUCKET,
+      Key: fileKey,
+    }));
+
+    const filename = encodeURIComponent(title) + '.pdf';
+    res.setHeader('Content-Type', ContentType || 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
+    if (ContentLength) res.setHeader('Content-Length', ContentLength);
+
+    // 스트림으로 전송
+    Body.pipe(res);
   } catch (err) {
-    console.error('Download error:', err);
-    if (!res.headersSent) res.status(500).json({ error: '다운로드 실패: ' + err.message });
+    console.error(err);
+    res.status(500).json({ error: '서버 오류가 발생했어요.' });
   }
 });
 
