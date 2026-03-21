@@ -167,7 +167,7 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
-// ── 다운로드 (서버 프록시 버퍼 방식) ──
+// ── 다운로드 (https 모듈 직접 사용 - SSL 완전 우회) ──
 // GET /api/notes/:id/download
 router.get('/:id/download', authenticate, async (req, res) => {
   try {
@@ -184,23 +184,32 @@ router.get('/:id/download', authenticate, async (req, res) => {
     const title = note.rows[0].title || 'note';
     const filename = encodeURIComponent(title) + '.pdf';
 
-    // 서버가 R2에서 파일 받아서 버퍼로 합치기 (TLS 우회 적용됨)
-    const s3res = await r2.send(new GetObjectCommand({
+    // 1단계: Presigned URL 생성 (SDK 사용)
+    const signedUrl = await getSignedUrl(r2, new GetObjectCommand({
       Bucket: process.env.R2_PRIVATE_BUCKET,
       Key: note.rows[0].file_key,
-    }));
+    }), { expiresIn: 3600 });
 
-    const chunks = [];
-    for await (const chunk of s3res.Body) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-    }
-    const buffer = Buffer.concat(chunks);
+    // 2단계: https 모듈로 직접 다운로드 (SSL 검증 완전 비활성화)
+    const fileBuffer = await new Promise((resolve, reject) => {
+      const chunks = [];
+      const agent = new https.Agent({ rejectUnauthorized: false });
+      https.get(signedUrl, { agent }, (response) => {
+        if (response.statusCode !== 200) {
+          reject(new Error('R2 응답 오류: ' + response.statusCode));
+          return;
+        }
+        response.on('data', (chunk) => chunks.push(chunk));
+        response.on('end', () => resolve(Buffer.concat(chunks)));
+        response.on('error', reject);
+      }).on('error', reject);
+    });
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
-    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Content-Length', fileBuffer.length);
     res.setHeader('Access-Control-Allow-Origin', '*');
-    return res.send(buffer);
+    return res.send(fileBuffer);
   } catch (err) {
     console.error('다운로드 오류:', err.message);
     if (!res.headersSent) {
