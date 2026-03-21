@@ -352,7 +352,9 @@ footer a{color:var(--al);text-decoration:none}
     <div style="color:var(--ink-m);font-size:14px;margin-bottom:20px" id="rep-nn"></div>
     <div id="rep-opts" style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px"></div>
     <textarea id="rep-detail" style="width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--ink);font-family:inherit;resize:vertical;min-height:80px;margin-bottom:14px;outline:none" placeholder="자세한 내용 (선택사항)"></textarea>
-    <div style="display:flex;gap:10px"><button class="btn" style="flex:1;background:var(--orange);color:#fff;border-color:var(--orange)" onclick="submitReport()">신고 제출</button><button class="btn btn-s" onclick="closeRepModal()">취소</button></div>
+git add .
+git commit -m "관리자 노트 열람 기능 추가"
+git push    <div style="display:flex;gap:10px"><button class="btn" style="flex:1;background:var(--orange);color:#fff;border-color:var(--orange)" onclick="submitReport()">신고 제출</button><button class="btn btn-s" onclick="closeRepModal()">취소</button></div>
   </div>
 </div>
 
@@ -386,7 +388,7 @@ footer a{color:var(--al);text-decoration:none}
 // =====================================================
 // 설정 — 배포 후 여기 URL을 실제 서버 주소로 변경하세요
 // =====================================================
-const API = 'http://localhost:3000/api';
+const API = 'https://notemarket-production.up.railway.app/api';
 // 배포 후: const API = 'https://[Railway URL]/api';
 
 let cur = null;
