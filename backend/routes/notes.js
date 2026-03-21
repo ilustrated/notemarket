@@ -12,8 +12,7 @@ const r2 = new S3Client({
   credentials: {
     accessKeyId: process.env.R2_ACCESS_KEY_ID,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-  },
-  tls: false
+  }
 });
 
 // ── 노트 목록 조회 (검색/필터) ──
