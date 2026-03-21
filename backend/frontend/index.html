@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>노트마켓 — 선배의 지식을 후배에게</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://pay.nicepay.co.kr/v1/js/"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://js.tosspayments.com/v1/payment"></script>
 <style>
 :root{
   --cream:#F7F3ED;--cream-d:#EDE7DC;--ink:#1A1714;--ink-s:#3D3830;--ink-m:#7A7168;
@@ -226,19 +224,6 @@ footer a{color:var(--al);text-decoration:none}
 .auth-hint b{color:var(--a);cursor:pointer}
 @media(max-width:768px){.hero{grid-template-columns:1fr;padding:40px 5%}.hero-visual{display:none}.search-row{grid-template-columns:1fr}.notes-grid{grid-template-columns:1fr 1fr}.mgrid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.nl.hide-sm{display:none}.admin-layout{grid-template-columns:1fr}.admin-sidebar{display:none}.a-stats,.dash-stats{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){.notes-grid,.dash-stats{grid-template-columns:1fr}}
-.up-tabs{display:flex;margin-bottom:24px;border:1.5px solid var(--bd);border-radius:12px;overflow:hidden}
-.up-tab{flex:1;padding:14px;text-align:center;cursor:pointer;font-size:14px;font-weight:500;transition:all .2s;color:var(--ink-m);background:transparent;border:none;font-family:inherit;border-right:1.5px solid var(--bd)}
-.up-tab:last-child{border-right:none}.up-tab.active{background:var(--ink);color:var(--cream)}
-.note-editor{width:100%;min-height:280px;border:1.5px solid var(--bd);border-radius:12px;padding:16px;font-size:14px;line-height:1.9;color:var(--ink);font-family:'Noto Sans KR',sans-serif;resize:vertical;outline:none;background:#fff}
-.note-editor:focus{border-color:var(--a)}
-.preview-box{border:1.5px solid var(--bd);border-radius:12px;overflow:hidden;margin-bottom:20px}
-.qa-modal-wrap{background:var(--cream);border-radius:20px;max-width:620px;width:100%;display:flex;flex-direction:column;max-height:86vh;box-shadow:var(--shadow-lg);animation:fadeUp .3s ease}
-.qa-body{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:12px;min-height:180px}
-.qa-bubble{border-radius:14px;padding:12px 16px;font-size:14px;line-height:1.7;max-width:83%;white-space:pre-wrap}
-.qa-user{background:var(--ink);color:var(--cream);align-self:flex-end}.qa-ai{background:#fff;border:1.5px solid var(--bd);align-self:flex-start}
-.qa-input-row{padding:16px 24px;border-top:1px solid var(--bd);display:flex;gap:10px}
-.qa-input{flex:1;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;resize:none}
-.qa-input:focus{border-color:var(--a)}
 </style>
 </head>
 <body>
@@ -283,7 +268,7 @@ footer a{color:var(--al);text-decoration:none}
     <h2 style="font-family:'Noto Serif KR',serif;font-size:22px;margin-bottom:24px">인기 학과별 노트</h2>
     <div id="cat-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px"></div>
   </section>
-  <footer><p>© 2025 노트마켓 &nbsp;·&nbsp; <a href="/legal.html">이용약관</a> &nbsp;·&nbsp; <a href="/legal.html?tab=privacy">개인정보 처리방침</a> &nbsp;·&nbsp; <a href="/legal.html?tab=seller">판매자 가이드라인</a></p></footer>
+  <footer><p>© 2025 노트마켓 &nbsp;·&nbsp; <a href="#">이용약관</a> &nbsp;·&nbsp; <a href="#">판매자 정책</a></p></footer>
 </div>
 
 <!-- BROWSE -->
@@ -319,7 +304,6 @@ footer a{color:var(--al);text-decoration:none}
       <div class="anav" id="anav-rep" onclick="showA('rep')"><span>🚨</span>신고<span class="anav-b" id="rep-badge" style="display:none">0</span></div>
       <div class="anav" id="anav-na" onclick="showA('na')"><span>📄</span>노트 관리</div>
       <div class="anav" id="anav-users" onclick="showA('users')"><span>👥</span>사용자</div>
-      <div class="anav" id="anav-badges" onclick="showA('badges')"><span>🏆</span>성적인증 관리</div>
       <div style="margin-top:auto;padding-top:24px;border-top:1px solid rgba(255,255,255,.1)">
         <div class="anav" onclick="logout()"><span>🚪</span>로그아웃</div>
       </div>
@@ -330,7 +314,6 @@ footer a{color:var(--al);text-decoration:none}
       <div class="asec" id="a-settle"><div class="asec-title">정산 관리</div><div class="asec-sub">거래일로부터 7일 경과 후 정산 가능 — 잠금 금액은 아직 7일이 지나지 않은 금액</div><div class="a-stats" id="settle-stats" style="grid-template-columns:repeat(3,1fr)"></div><div class="ap"><div class="ap-hdr"><div class="ap-title">판매자별 정산 현황</div></div><div id="settle-list"></div></div></div>
       <div class="asec" id="a-rep"><div class="asec-title">신고 관리</div><div class="asec-sub">사용자가 신고한 노트를 검토하세요</div><div class="a-stats" id="rep-stats" style="grid-template-columns:repeat(3,1fr)"></div><div class="ap"><div class="ap-hdr"><div class="ap-title">신고 목록</div><select id="rep-filter" style="border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:13px;background:#fff;font-family:inherit" onchange="loadReports()"><option value="">전체</option><option value="pending">미처리</option><option value="resolved">처리됨</option></select></div><div id="rep-list"></div></div></div>
       <div class="asec" id="a-na"><div class="asec-title">노트 관리</div><div class="asec-sub">관리자는 삭제된 노트를 포함한 모든 노트 열람·삭제 가능</div><div style="display:flex;gap:8px;margin-bottom:12px"><select id="note-sf" style="border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:13px;background:#fff;font-family:inherit" onchange="loadAdminNotes()"><option value="">전체</option><option value="live">게시중</option><option value="removed">삭제됨</option></select><input id="note-sq" placeholder="노트명 검색" style="flex:1;border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:13px;background:#fff;font-family:inherit" oninput="loadAdminNotes()"></div><div class="ap" style="overflow-x:auto"><table class="at"><thead><tr><th>노트</th><th>판매자</th><th>학교·과목</th><th>가격</th><th>상태</th><th>업로드</th><th>DL</th><th>신고</th><th>관리</th></tr></thead><tbody id="na-tbody"></tbody></table></div></div>
-      <div class="asec" id="a-badges"><div class="asec-title">성적인증 관리</div><div class="asec-sub">판매자가 신청한 성적 인증 배지를 검토하고 승인·거절하세요</div><div class="ap" style="overflow-x:auto"><table class="at"><thead><tr><th>노트</th><th>판매자</th><th>학점</th><th>상태</th><th>신청일</th><th>관리자 메모</th><th>관리</th></tr></thead><tbody id="badges-tbody"></tbody></table></div></div>
       <div class="asec" id="a-users"><div class="asec-title">사용자 관리</div><div class="asec-sub">전체 회원 현황</div><div class="ap"><div class="ap-hdr"><div class="ap-title" id="ulbl">전체 사용자</div><input id="user-q" placeholder="이름·이메일 검색" style="border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:13px;background:#fff;font-family:inherit;width:180px" oninput="loadUsers()"></div><div style="overflow-x:auto"><table class="at"><thead><tr><th>이름</th><th>이메일</th><th>학교·학과</th><th>상태</th><th>가입일</th><th>판매</th><th>잔액</th><th>관리</th></tr></thead><tbody id="u-tbody"></tbody></table></div></div></div>
     </div>
   </div>
@@ -345,14 +328,6 @@ footer a{color:var(--al);text-decoration:none}
   <footer><p>© 2025 노트마켓</p></footer>
 </div>
 
-<footer>
-  <p>© 2025 노트마켓 &nbsp;·&nbsp;
-    <a href="/legal.html">이용약관</a> &nbsp;·&nbsp;
-    <a href="/legal.html?tab=privacy">개인정보 처리방침</a> &nbsp;·&nbsp;
-    <a href="/legal.html?tab=seller">판매자 가이드라인</a>
-  </p>
-</footer>
-
 <!-- NOTE MODAL -->
 <div class="modal-overlay" id="modal-note" onclick="closeNM(event)">
   <div class="modal">
@@ -365,95 +340,8 @@ footer a{color:var(--al);text-decoration:none}
       </div>
       <div class="prev-box"><div class="prev-lbl">미리보기</div><div class="prev-txt" id="m-prev"></div><div class="prev-blur">····· 이하 내용은 구매 후 열람 가능 ·····<br>██████████ ████ ████████</div></div>
       <div class="m-actions" id="m-acts"></div>
-      <div id="m-study-section"></div>
-      <div id="m-exam-analysis" style="display:none;margin-top:20px;padding:20px;background:#f0f7ff;border:1px solid #b3d4f5;border-radius:12px">
-        <div style="font-size:13px;font-weight:700;color:#1565C0;margin-bottom:10px">📊 AI 족보 분석</div>
-        <div id="m-exam-text" style="font-size:13px;color:#1A1714;line-height:1.8;white-space:pre-wrap"></div>
-      </div>
-      <div class="rvs">
-        <div class="ms-t">구매자 리뷰</div>
-        <div id="m-review-form" style="display:none;background:var(--cream);border:1.5px solid var(--bd);border-radius:12px;padding:16px 18px;margin-bottom:16px">
-          <div style="font-size:13px;font-weight:600;margin-bottom:10px">리뷰 작성</div>
-          <div style="display:flex;gap:6px;margin-bottom:10px" id="rv-stars-wrap">
-            <span class="rv-star-btn" data-v="1" onclick="setRvStar(1)" style="font-size:24px;cursor:pointer;color:var(--bd)">★</span>
-            <span class="rv-star-btn" data-v="2" onclick="setRvStar(2)" style="font-size:24px;cursor:pointer;color:var(--bd)">★</span>
-            <span class="rv-star-btn" data-v="3" onclick="setRvStar(3)" style="font-size:24px;cursor:pointer;color:var(--bd)">★</span>
-            <span class="rv-star-btn" data-v="4" onclick="setRvStar(4)" style="font-size:24px;cursor:pointer;color:var(--bd)">★</span>
-            <span class="rv-star-btn" data-v="5" onclick="setRvStar(5)" style="font-size:24px;cursor:pointer;color:var(--bd)">★</span>
-          </div>
-          <textarea id="rv-content" placeholder="노트에 대한 솔직한 리뷰를 남겨주세요." style="width:100%;border:1.5px solid var(--bd);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;resize:vertical;min-height:80px;box-sizing:border-box"></textarea>
-          <button onclick="submitReview()" class="btn btn-p" style="margin-top:10px;width:100%;padding:11px">리뷰 등록</button>
-        </div>
-        <div id="m-rvs"></div>
-      </div>
+      <div class="rvs"><div class="ms-t">구매자 리뷰</div><div id="m-rvs"></div></div>
     </div>
-  </div>
-</div>
-
-<!-- AI Q&A MODAL -->
-<div class="modal-overlay" id="modal-qa" onclick="closeQA(event)">
-  <div class="qa-modal-wrap">
-    <div class="mhdr" style="border-radius:20px 20px 0 0">
-      <button class="mclose" onclick="closeQA()">✕</button>
-      <div style="color:var(--al);font-size:12px;font-weight:600;margin-bottom:6px">✨ AI 노트 도우미</div>
-      <div id="qa-note-title" style="font-family:'Noto Serif KR',serif;font-size:18px;color:#fff"></div>
-      <div style="color:rgba(255,255,255,.5);font-size:13px;margin-top:4px">구매한 노트를 바탕으로 궁금한 내용을 질문해보세요</div>
-    </div>
-    <div class="qa-body" id="qa-body">
-      <div class="qa-bubble qa-ai">안녕하세요! 이 노트에 대해 궁금한 점이 있으면 무엇이든 물어보세요. 📚</div>
-    </div>
-    <div class="qa-input-row">
-      <textarea class="qa-input" id="qa-input" rows="2" placeholder="질문을 입력하세요... (Enter로 전송, Shift+Enter 줄바꿈)" onkeydown="qaKeyDown(event)"></textarea>
-      <button class="btn btn-a" style="padding:10px 16px;align-self:flex-end;white-space:nowrap" id="qa-send-btn" onclick="sendQA()">전송</button>
-    </div>
-  </div>
-</div>
-
-<!-- 내 구매 모달 -->
-<div class="modal-overlay" id="modal-purchases" onclick="closeMyPurchases(event)" style="align-items:flex-start;padding-top:60px">
-  <div class="modal" style="max-width:700px;width:95%;max-height:80vh;display:flex;flex-direction:column">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-shrink:0">
-      <h2 style="font-family:'Noto Serif KR',serif;font-size:20px">📚 내가 구매한 노트</h2>
-      <button onclick="closeMyPurchases()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink-m)">✕</button>
-    </div>
-    <div id="purchases-list" style="overflow-y:auto;flex:1"></div>
-  </div>
-</div>
-
-<!-- STUDY GROUP MODAL -->
-<div class="modal-overlay" id="modal-study" onclick="closeStudyModal(event)" style="align-items:flex-start;padding-top:60px">
-  <div class="modal" style="max-width:560px;width:95%;max-height:80vh;display:flex;flex-direction:column">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-shrink:0">
-      <div>
-        <h2 style="font-family:'Noto Serif KR',serif;font-size:18px">👥 스터디 그룹</h2>
-        <div id="study-modal-title" style="font-size:13px;color:var(--ink-m);margin-top:2px"></div>
-      </div>
-      <button onclick="document.getElementById('modal-study').classList.remove('open');document.body.style.overflow=''" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink-m)">✕</button>
-    </div>
-    <div id="study-modal-content" style="overflow-y:auto;flex:1"></div>
-  </div>
-</div>
-
-<!-- GRADE BADGE MODAL -->
-<div class="modal-overlay" id="modal-grade-badge" onclick="closeGradeBadgeModal(event)">
-  <div class="report-modal" style="max-width:440px">
-    <div style="font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;margin-bottom:6px">🏆 성적 인증 신청</div>
-    <div style="color:var(--ink-m);font-size:14px;margin-bottom:20px">성적표 스크린샷과 취득 학점을 제출하면 관리자 검토 후 배지가 부여됩니다.</div>
-    <input type="hidden" id="gb-note-id">
-    <div class="fg"><label class="fl">취득 학점 <span class="req">*</span></label><input class="fi" id="gb-grade" placeholder="예: A+, A0, B+" style="background:#fff;border:1.5px solid var(--bd);border-radius:10px;padding:12px 16px;font-size:15px;color:var(--ink);font-family:inherit;outline:none;width:100%"></div>
-    <div class="fg" style="margin-top:14px"><label class="fl">성적표 스크린샷 <span class="req">*</span></label><input type="file" id="gb-file" accept="image/*,.pdf" style="width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;font-size:14px;background:#fff;font-family:inherit"></div>
-    <div style="display:flex;gap:10px;margin-top:18px"><button class="btn btn-g" id="gb-submit-btn" style="flex:1" onclick="submitGradeBadge()">신청 제출</button><button class="btn btn-s" onclick="closeGradeBadgeModal()">취소</button></div>
-  </div>
-</div>
-
-<!-- EXAM ANALYSIS UPLOAD MODAL -->
-<div class="modal-overlay" id="modal-exam-analysis" onclick="closeExamAnalysisModal(event)">
-  <div class="report-modal" style="max-width:440px">
-    <div style="font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;margin-bottom:6px">📊 족보 분석 업로드</div>
-    <div style="color:var(--ink-m);font-size:14px;margin-bottom:20px">기출문제 파일을 업로드하면 AI가 출제 경향을 분석해서 구매자들에게 제공합니다.</div>
-    <input type="hidden" id="ea-note-id">
-    <div class="fg"><label class="fl">기출문제 파일 (PDF 또는 이미지) <span class="req">*</span></label><input type="file" id="ea-file" accept="image/*,.pdf" style="width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;font-size:14px;background:#fff;font-family:inherit"></div>
-    <div style="display:flex;gap:10px;margin-top:18px"><button class="btn btn-a" id="ea-submit-btn" style="flex:1" onclick="submitExamAnalysis()">AI 분석 시작</button><button class="btn btn-s" onclick="closeExamAnalysisModal()">취소</button></div>
   </div>
 </div>
 
@@ -498,11 +386,11 @@ footer a{color:var(--al);text-decoration:none}
 // =====================================================
 // 설정 — 배포 후 여기 URL을 실제 서버 주소로 변경하세요
 // =====================================================
-const API = '/api';
+const API = 'http://localhost:3000/api';
+// 배포 후: const API = 'https://[Railway URL]/api';
 
 let cur = null;
 let curNoteId = null;
-let curDownloadUrl = null;
 let activeDept = '';
 let logFilter = 'all';
 
@@ -568,7 +456,7 @@ function updateNav() {
   } else if (cur.role === 'admin') {
     a.innerHTML = `<button class="nl" style="background:var(--ink);color:var(--cream);padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600" onclick="go('admin')">🛡 관리자 패널</button><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">${cur.name[0]}</div><span style="font-size:14px;font-weight:500">${cur.name}</span><button class="nav-btn ol" onclick="logout()">로그아웃</button></div>`;
   } else {
-    a.innerHTML = `<button class="nl hide-sm" onclick="go('browse')">노트 찾기</button><button class="nl hide-sm" onclick="go('upload')">노트 판매</button><button class="nl hide-sm" onclick="go('seller')">내 판매현황</button><button class="nl hide-sm" onclick="openMyPurchases()" style="color:var(--a);font-weight:600">📚 내 구매</button><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">${cur.name[0]}</div><span style="font-size:14px;font-weight:500">${cur.name}</span><button class="nav-btn ol" onclick="logout()">로그아웃</button></div>`;
+    a.innerHTML = `<button class="nl hide-sm" onclick="go('browse')">노트 찾기</button><button class="nl hide-sm" onclick="go('upload')">노트 판매</button><button class="nl hide-sm" onclick="go('seller')">내 판매현황</button><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">${cur.name[0]}</div><span style="font-size:14px;font-weight:500">${cur.name}</span><button class="nav-btn ol" onclick="logout()">로그아웃</button></div>`;
   }
 }
 
@@ -631,7 +519,7 @@ async function loadNotes() {
         <div class="nc-thumb" style="background:${n.color||'#C8841A'}18;color:${n.color||'#C8841A'}">${n.subject||n.title}<br><span style="font-size:11px;opacity:.6">${n.semester||''}</span></div>
         <div class="nc-body">
           <div class="nc-school">${n.school||''} · ${n.department||''}</div>
-          <div class="nc-title">${n.title}${n.badge_grade ? ` <span style="display:inline-block;background:#FFF8E1;color:#B8860B;border:1px solid #DAA520;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;vertical-align:middle">✓ 성적인증 ${n.badge_grade}</span>` : ''}</div>
+          <div class="nc-title">${n.title}</div>
           <div class="nc-prof">${n.professor||''} · ${n.pages||'PDF'}</div>
           <div class="nc-foot">
             <div class="nc-seller"><div class="av" style="background:${n.color||'#C8841A'}">${(n.seller_name||'?')[0]}</div><span style="font-size:12px;color:var(--ink-m)">${n.seller_name||''}</span></div>
@@ -692,58 +580,23 @@ async function openNote(id) {
     document.getElementById('m-prev').textContent  = n.preview_key ? '(미리보기 이미지는 실제 서비스에서 표시됩니다)' : n.description || '';
 
     const adminBanner = document.getElementById('m-admin-banner');
-    let bannerHtml = '';
     if (cur?.role === 'admin' && n.status === 'removed') {
-      bannerHtml += `<div style="background:var(--red-l);border:1px solid #FFCDD2;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--red);display:flex;align-items:center;gap:8px">🛡 관리자 뷰 — 삭제된 노트입니다 (일반 사용자에게 보이지 않음)</div>`;
-    }
-    if (n.badge_grade) {
-      bannerHtml += `<div style="background:#FFF8E1;border:1px solid #DAA520;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:14px;color:#B8860B;display:flex;align-items:center;gap:8px;font-weight:600">🏆 성적인증: ${n.badge_grade} — 판매자가 실제로 취득한 성적입니다</div>`;
-    }
-    adminBanner.innerHTML = bannerHtml;
-
-    // 족보 분석 로드
-    loadExamAnalysis(n.id);
+      adminBanner.innerHTML = `<div style="background:var(--red-l);border:1px solid #FFCDD2;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--red);display:flex;align-items:center;gap:8px">🛡 관리자 뷰 — 삭제된 노트입니다 (일반 사용자에게 보이지 않음)</div>`;
+    } else adminBanner.innerHTML = '';
 
     const acts = document.getElementById('m-acts');
-    curDownloadUrl = null;
-    let isPurchased = false;
-    document.getElementById('m-review-form').style.display = 'none';
     if (cur?.role === 'admin') {
-      acts.innerHTML = `<span style="font-size:12px;color:var(--ink-m);background:var(--cream-d);padding:8px 12px;border-radius:10px">🛡 관리자 뷰</span>${n.status === 'live' ? `<button class="btn btn-sm btn-d" onclick="adminDelNote('${n.id}')">노트 삭제</button>` : '<span class="badge br">삭제됨</span>'}`;
+      acts.innerHTML = '<span style="font-size:12px;color:var(--ink-m);background:var(--cream-d);padding:8px 12px;border-radius:10px">🛡 관리자 뷰</span>' +
+        '<button class="btn btn-sm" style="background:var(--teal);color:#fff;border-color:var(--teal)" onclick="adminDownloadNote(\'' + n.id + '\',\'' + (n.title||'').replace(/'/g,'') + '\')">📥 노트 열람</button>' +
+        (n.status === 'live' ? '<button class="btn btn-sm btn-d" onclick="adminDelNote(\'' + n.id + '\')">노트 삭제</button>' : '<span class="badge br">삭제됨</span>');
     } else {
-      const wlBtns = `<button class="btn-wl" id="wl-btn" onclick="toggleWishlist()">${isWished(n.id)?'♥':'♡'}</button><button class="btn-rpt" onclick="openRepModal()">🚨 신고</button>`;
-      if (cur) {
-        try {
-          const { purchased } = await api('/notes/' + n.id + '/purchase-check');
-          const isSeller = n.seller_id === cur.id;
-          isPurchased = purchased;
-          if (purchased || isSeller) {
-            acts.innerHTML = `<button class="btn-buy" onclick="downloadNote()">📥 다운로드</button><button class="btn btn-a btn-sm" style="padding:14px 16px;font-size:14px" onclick="openQA('${n.id}','${(n.title||'').replace(/'/g,'&apos;')}')">✨ AI 질문</button>${wlBtns}`;
-            loadStudySection(n.id, isSeller);
-          } else {
-            acts.innerHTML = `<button class="btn-buy" onclick="buyNote()">구매 ${Number(n.price).toLocaleString()}원</button>${wlBtns}`;
-          }
-        } catch {
-          acts.innerHTML = `<button class="btn-buy" onclick="buyNote()">구매 ${Number(n.price).toLocaleString()}원</button>${wlBtns}`;
-        }
-      } else {
-        acts.innerHTML = `<button class="btn-buy" onclick="buyNote()">구매 ${Number(n.price).toLocaleString()}원</button>${wlBtns}`;
-      }
+      acts.innerHTML = `<button class="btn-buy" onclick="buyNote()">구매 ${Number(n.price).toLocaleString()}원</button><button class="btn-wl" onclick="toast('찜 목록에 추가되었어요 ♡')">♡</button><button class="btn-rpt" onclick="openRepModal()">🚨 신고</button>`;
     }
 
     const reviews = typeof n.reviews === 'string' ? JSON.parse(n.reviews) : (n.reviews || []);
-    renderReviews(reviews);
-
-    // 구매자인 경우 리뷰 작성 폼 표시 (이미 리뷰 썼으면 숨김)
-    if (isPurchased) {
-      const alreadyReviewed = reviews.some(r => r.name === cur?.name);
-      if (!alreadyReviewed) {
-        document.getElementById('m-review-form').style.display = 'block';
-        window._rvNoteId = n.id;
-        window._rvRating = 0;
-        setRvStar(0);
-      }
-    }
+    document.getElementById('m-rvs').innerHTML = reviews.length
+      ? reviews.map(r => `<div class="rv-item"><div class="rv-top"><span style="font-size:13px;font-weight:500">${r.name||'익명'}</span><span class="rv-stars">${'★'.repeat(r.rating||5)}</span></div><div class="rv-txt">${r.content||r.text||''}</div></div>`).join('')
+      : '<div style="color:var(--ink-m);font-size:14px;padding:16px 0">아직 리뷰가 없어요.</div>';
   } catch (e) {
     document.getElementById('m-title').textContent = '노트를 불러올 수 없어요.';
     toast(e.message, 'err');
@@ -756,83 +609,25 @@ function closeNM(e) {
   }
 }
 
-function renderReviews(reviews) {
-  document.getElementById('m-rvs').innerHTML = reviews.length
-    ? reviews.map(r => `<div class="rv-item"><div class="rv-top"><span style="font-size:13px;font-weight:500">${r.name||'익명'}</span><span class="rv-stars">${'★'.repeat(r.rating||5)}</span></div><div class="rv-txt">${r.content||r.text||''}</div></div>`).join('')
-    : '<div style="color:var(--ink-m);font-size:14px;padding:16px 0">아직 리뷰가 없어요.</div>';
-}
 
-function setRvStar(v) {
-  window._rvRating = v;
-  document.querySelectorAll('.rv-star-btn').forEach(el => {
-    el.style.color = Number(el.dataset.v) <= v ? 'var(--a)' : 'var(--bd)';
-  });
-}
-
-async function submitReview() {
-  const rating = window._rvRating || 0;
-  const content = document.getElementById('rv-content').value.trim();
-  if (!rating) { toast('별점을 선택해주세요.', 'err'); return; }
-  if (!content) { toast('리뷰 내용을 입력해주세요.', 'err'); return; }
-  const token = localStorage.getItem('nm_token');
+// -- 관리자 노트 열람 --
+async function adminDownloadNote(id, title) {
   try {
-    const res = await fetch(`/api/notes/${window._rvNoteId}/reviews`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ rating, content }),
-    });
-    const data = await res.json();
-    if (!res.ok) { toast(data.error || '오류가 발생했어요.', 'err'); return; }
-    toast('리뷰가 등록됐어요!');
-    document.getElementById('m-review-form').style.display = 'none';
-    // 리뷰 목록 새로고침
-    const nr = await fetch(`/api/notes/${window._rvNoteId}`);
-    const nd = await nr.json();
-    const reviews = typeof nd.note.reviews === 'string' ? JSON.parse(nd.note.reviews) : (nd.note.reviews || []);
-    renderReviews(reviews);
-    document.getElementById('m-rating').textContent = `★ ${nd.note.avg_rating > 0 ? Number(nd.note.avg_rating).toFixed(1) : '-'} (${nd.note.review_count}개 리뷰)`;
-  } catch (e) {
-    toast('오류: ' + e.message, 'err');
+    toast('다운로드 URL 생성 중...');
+    var data = await api('/notes/' + id + '/download');
+    if (data.downloadUrl) {
+      var a = document.createElement('a');
+      a.href = data.downloadUrl;
+      a.download = (title || 'note') + '.pdf';
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast('노트 다운로드가 시작됐어요.', 'ok');
+    }
+  } catch(e) {
+    toast(e.message, 'err');
   }
-}
-
-// ── 찜 ──
-function getWishlist() {
-  try { return JSON.parse(localStorage.getItem('nm_wishlist') || '[]'); } catch { return []; }
-}
-function isWished(noteId) {
-  return getWishlist().some(n => n.id === noteId);
-}
-function toggleWishlist() {
-  if (!curNoteId) return;
-  let wl = getWishlist();
-  const idx = wl.findIndex(n => n.id === curNoteId);
-  if (idx >= 0) {
-    wl.splice(idx, 1);
-    toast('찜 목록에서 제거되었어요.');
-  } else {
-    const titleEl = document.getElementById('m-title');
-    const priceText = document.querySelector('.btn-buy')?.textContent || '';
-    const priceMatch = priceText.match(/[\d,]+/);
-    wl.push({
-      id: curNoteId,
-      title: titleEl?.textContent || '',
-      price: priceMatch ? parseInt(priceMatch[0].replace(/,/g, '')) : 0,
-      school: document.getElementById('m-school')?.textContent || '',
-      subject: document.getElementById('m-prof')?.textContent || '',
-    });
-    toast('찜 목록에 추가되었어요 ♥', 'ok');
-  }
-  localStorage.setItem('nm_wishlist', JSON.stringify(wl));
-  const btn = document.getElementById('wl-btn');
-  if (btn) btn.textContent = isWished(curNoteId) ? '♥' : '♡';
-}
-
-// ── 다운로드 ──
-function downloadNote() {
-  const token = localStorage.getItem('nm_token');
-  if (!curNoteId || !token) { toast('다운로드할 수 없어요.', 'err'); return; }
-  window.location.href = `${API}/notes/${curNoteId}/download?token=${encodeURIComponent(token)}`;
 }
 
 // ── 구매 ──
@@ -840,24 +635,16 @@ async function buyNote() {
   if (!cur) { closeNM(); openAM('login'); toast('구매하려면 먼저 로그인해주세요.'); return; }
   try {
     const order = await api('/payment/prepare', { method: 'POST', body: JSON.stringify({ noteId: curNoteId }) });
-    if (typeof AUTHNICE === 'undefined') { toast('결제 모듈을 불러오지 못했어요. 페이지를 새로고침 후 다시 시도해주세요.', 'err'); return; }
-    AUTHNICE.requestPay({
-      clientId: order.clientId,
-      method: 'card',
-      orderId: order.orderId,
+    const toss = TossPayments(order.clientKey);
+    await toss.requestPayment('카드', {
       amount: order.amount,
-      goodsName: order.orderName,
-      buyerName: order.customerName,
-      returnUrl: location.origin + '/api/payment/nicepay-callback',
-      fnError: function(result) { toast('[나이스페이] ' + (result.resultMsg || '결제에 실패했어요.'), 'err'); },
+      orderId: order.orderId,
+      orderName: order.orderName,
+      customerName: order.customerName,
+      successUrl: location.origin + '/payment-success.html',
+      failUrl:    location.origin + '/payment-fail.html',
     });
-  } catch (e) {
-    if (e.message === 'Failed to fetch') {
-      toast('서버에 연결할 수 없어요. 잠시 후 다시 시도해주세요.', 'err');
-    } else {
-      toast(e.message, 'err');
-    }
-  }
+  } catch (e) { toast(e.message, 'err'); }
 }
 async function adminDelNote(id) {
   if (!confirm('이 노트를 삭제하시겠어요?')) return;
@@ -894,181 +681,34 @@ async function submitReport() {
 }
 
 // ── 업로드 ──
-let _uploadMode = 'direct';
-let _aiBlobPDF = null;
-
 function renderUpload() {
   const el = document.getElementById('upload-inner');
   if (!cur) {
     el.innerHTML = `<div class="login-prompt" style="margin:60px 0"><h3 style="font-family:'Noto Serif KR',serif;font-size:22px;margin-bottom:10px">로그인이 필요해요</h3><p style="color:var(--ink-m);margin-bottom:24px">노트를 판매하려면 먼저 로그인 또는 회원가입해주세요.</p><div style="display:flex;gap:12px;justify-content:center"><button class="btn btn-p" onclick="openAM('login')">로그인</button><button class="btn btn-s" onclick="openAM('signup')">회원가입</button></div></div>`;
     return;
   }
-  _uploadMode = 'direct'; _aiBlobPDF = null;
   el.innerHTML = `
-    <h2>내 노트 판매하기</h2><p style="color:var(--ink-m);margin-bottom:24px">직접 작성한 강의 요약 노트를 등록하세요.</p>
-    <div class="up-tabs">
-      <button class="up-tab active" id="tab-direct" onclick="setUploadTab('direct')">📄 직접 PDF 업로드</button>
-      <button class="up-tab" id="tab-ai" onclick="setUploadTab('ai')">✨ AI 필기 변환</button>
-    </div>
-
-    <div id="sec-direct">
-      <div class="instant-badge"><span>⚡</span><div><strong>즉시 게시</strong> — 업로드 즉시 공개됩니다.</div></div>
-      <div class="fg"><label class="fl">PDF 파일 <span class="req">*</span></label>
-        <input type="file" accept=".pdf" id="up-file" style="width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;font-size:14px;background:#fff;font-family:inherit" onchange="previewDirectPDF(this)">
-      </div>
-      <div id="direct-preview-wrap" style="display:none" class="preview-box">
-        <div style="background:var(--ab);padding:8px 14px;font-size:12px;font-weight:600;color:var(--a);border-bottom:1px solid var(--al)">📄 업로드 전 미리보기</div>
-        <iframe id="direct-preview" style="width:100%;height:480px;border:none;display:block"></iframe>
-      </div>
-    </div>
-
-    <div id="sec-ai" style="display:none">
-      <div style="background:linear-gradient(135deg,var(--ab),#fff);border:1.5px solid var(--al);border-radius:14px;padding:20px;margin-bottom:20px">
-        <div style="font-size:13px;font-weight:600;color:var(--a);margin-bottom:6px">✨ Claude AI 필기 변환</div>
-        <div style="font-size:13px;color:var(--ink-s);line-height:1.7">필기한 노트 사진이나 PDF를 업로드하면 AI가 내용을 깔끔하게 정리해드려요.<br>정리된 내용을 직접 <strong>수정</strong>한 후, PDF로 변환해서 바로 판매 등록하세요.</div>
-      </div>
-      <div class="fg"><label class="fl">필기 이미지 또는 PDF <span class="req">*</span></label>
-        <input type="file" accept="image/*,.pdf" id="ai-file" style="width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;font-size:14px;background:#fff;font-family:inherit">
-      </div>
-      <button class="btn btn-a" style="width:100%;padding:14px;font-size:15px;border-radius:12px;margin-bottom:24px" id="ai-extract-btn" onclick="runAIExtract()">✨ AI로 내용 추출하기</button>
-      <div id="ai-result-sec" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <label class="fl" style="margin:0">📝 추출된 내용 — 직접 수정 가능</label>
-          <span style="font-size:12px;color:var(--ink-m)">클릭해서 편집하세요</span>
-        </div>
-        <textarea class="note-editor" id="ai-text-editor" placeholder="AI가 추출한 내용이 여기 표시됩니다..."></textarea>
-        <button class="btn btn-p" style="width:100%;padding:14px;font-size:15px;border-radius:12px;margin-top:12px" id="preview-btn" onclick="generatePreview()">👁 미리보기 생성 · PDF 변환 (수정 후 다시 클릭)</button>
-        <div id="ai-preview-wrap" style="display:none;margin-top:16px" class="preview-box">
-          <div style="background:var(--ab);padding:8px 14px;font-size:12px;font-weight:600;color:var(--a);border-bottom:1px solid var(--al)">👁 판매될 PDF 미리보기</div>
-          <iframe id="ai-preview" style="width:100%;height:480px;border:none;display:block"></iframe>
-        </div>
-      </div>
-    </div>
-
-    <div id="note-form-section" style="display:none;margin-top:28px;padding-top:28px;border-top:1.5px solid var(--bd)">
-      <div class="earn-card"><p>예상 수익</p><strong id="earn-prev">판매가 입력 시 표시됩니다</strong></div>
-      <div class="fg"><label class="fl">학교 <span class="req">*</span></label><input class="fi" id="up-sc" value="${cur.school||''}" placeholder="연세대학교"></div>
-      <div class="form-row">
-        <div class="fg"><label class="fl">학과 <span class="req">*</span></label><input class="fi" id="up-dt" value="${cur.department||''}" placeholder="경영학과"></div>
-        <div class="fg"><label class="fl">교수명 <span class="req">*</span></label><input class="fi" id="up-pf" placeholder="이재혁"></div>
-      </div>
-      <div class="fg"><label class="fl">과목명 <span class="req">*</span></label><input class="fi" id="up-sb" placeholder="재무관리"></div>
-      <div class="form-row">
-        <div class="fg"><label class="fl">학기</label><select class="fs" id="up-sm"><option>2025년 1학기</option><option>2024년 2학기</option><option>2024년 1학기</option></select></div>
-        <div class="fg"><label class="fl">종류</label><select class="fs" id="up-tp"><option>중간고사 대비</option><option>기말고사 대비</option><option>중간+기말 전범위</option><option>단원별 요약</option></select></div>
-      </div>
-      <div class="fg"><label class="fl">판매 가격 (원) <span class="req">*</span></label>
-        <input class="fi" type="number" id="up-pr" placeholder="5000" min="1000" max="30000" step="500" oninput="calcEarn(this.value)">
-        <div id="pdisplay" style="display:none;background:var(--ab);border:1px solid var(--al);border-radius:10px;padding:12px 16px;margin-top:10px;font-size:13px;justify-content:space-between"><span>수수료 20% 제외 정산액</span><strong id="earn-amt"></strong></div>
-      </div>
-      <div class="fg"><label class="fl">노트 소개 <span class="req">*</span></label><textarea class="ft" id="up-ds" placeholder="어떤 내용이 담겨있는지, 어떤 학생에게 도움이 될지 설명해주세요."></textarea></div>
-      <button class="btn btn-p" style="width:100%;padding:18px;font-size:16px;border-radius:12px;margin-top:8px" onclick="submitNote()">⚡ 즉시 게시하기</button>
-      <p style="font-size:12px;color:var(--ink-m);text-align:center;margin-top:14px">교수 강의자료 직접 전재 시 즉시 삭제됩니다.</p>
-    </div>`;
+    <h2>내 노트 판매하기</h2><p style="color:var(--ink-m);margin-bottom:28px">직접 작성한 강의 요약 노트를 등록하세요.</p>
+    <div class="instant-badge"><span>⚡</span><div><strong>즉시 게시</strong> — 업로드 즉시 공개됩니다. 저작권 위반 노트는 신고 시 삭제됩니다.</div></div>
+    <div class="earn-card"><p>예상 수익</p><strong id="earn-prev">판매가 입력 시 표시됩니다</strong></div>
+    <div class="fg"><label class="fl">학교 <span class="req">*</span></label><input class="fi" id="up-sc" value="${cur.school||''}" placeholder="연세대학교"></div>
+    <div class="form-row"><div class="fg"><label class="fl">학과 <span class="req">*</span></label><input class="fi" id="up-dt" value="${cur.department||''}" placeholder="경영학과"></div><div class="fg"><label class="fl">교수명 <span class="req">*</span></label><input class="fi" id="up-pf" placeholder="이재혁"></div></div>
+    <div class="fg"><label class="fl">과목명 <span class="req">*</span></label><input class="fi" id="up-sb" placeholder="재무관리"></div>
+    <div class="form-row"><div class="fg"><label class="fl">학기</label><select class="fs" id="up-sm"><option>2025년 1학기</option><option>2024년 2학기</option><option>2024년 1학기</option></select></div><div class="fg"><label class="fl">종류</label><select class="fs" id="up-tp"><option>중간고사 대비</option><option>기말고사 대비</option><option>중간+기말 전범위</option><option>단원별 요약</option></select></div></div>
+    <div class="fg"><label class="fl">판매 가격 (원) <span class="req">*</span></label><input class="fi" type="number" id="up-pr" placeholder="5000" min="1000" max="30000" step="500" oninput="calcEarn(this.value)"><div id="pdisplay" style="display:none;background:var(--ab);border:1px solid var(--al);border-radius:10px;padding:12px 16px;margin-top:10px;font-size:13px;display:none;justify-content:space-between"><span>수수료 20% 제외 정산액</span><strong id="earn-amt"></strong></div></div>
+    <div class="fg"><label class="fl">노트 소개 <span class="req">*</span></label><textarea class="ft" id="up-ds" placeholder="어떤 내용이 담겨있는지, 어떤 학생에게 도움이 될지 설명해주세요."></textarea></div>
+    <div class="fg"><label class="fl">PDF 파일 <span class="req">*</span></label><input type="file" accept=".pdf" id="up-file" style="width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;font-size:14px;background:#fff;font-family:inherit"></div>
+    <button class="btn btn-p" style="width:100%;padding:18px;font-size:16px;border-radius:12px;margin-top:8px" onclick="submitNote()">⚡ 즉시 게시하기</button>
+    <p style="font-size:12px;color:var(--ink-m);text-align:center;margin-top:14px">교수 강의자료 직접 전재 시 즉시 삭제됩니다.</p>`;
 }
-
-function setUploadTab(tab) {
-  _uploadMode = tab; _aiBlobPDF = null;
-  document.getElementById('tab-direct').classList.toggle('active', tab === 'direct');
-  document.getElementById('tab-ai').classList.toggle('active', tab === 'ai');
-  document.getElementById('sec-direct').style.display = tab === 'direct' ? '' : 'none';
-  document.getElementById('sec-ai').style.display = tab === 'ai' ? '' : 'none';
-  document.getElementById('note-form-section').style.display = 'none';
-}
-
-function previewDirectPDF(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  document.getElementById('direct-preview').src = url;
-  document.getElementById('direct-preview-wrap').style.display = 'block';
-  document.getElementById('note-form-section').style.display = 'block';
-  document.getElementById('direct-preview-wrap').scrollIntoView({ behavior: 'smooth' });
-}
-
-async function runAIExtract() {
-  const fileInput = document.getElementById('ai-file');
-  if (!fileInput.files[0]) { toast('파일을 선택해주세요.', 'err'); return; }
-  const file = fileInput.files[0];
-  const allowed = ['image/jpeg','image/png','image/gif','image/webp','application/pdf'];
-  if (!allowed.includes(file.type)) { toast('이미지(JPG/PNG/WebP) 또는 PDF만 가능해요.', 'err'); return; }
-  const btn = document.getElementById('ai-extract-btn');
-  btn.textContent = '✨ AI 분석 중... (최대 1분)'; btn.disabled = true;
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    const token = localStorage.getItem('nm_token');
-    const res = await fetch(API + '/ai/extract', { method:'POST', headers:{'Authorization':'Bearer '+token}, body:formData });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'AI 변환 실패');
-    document.getElementById('ai-text-editor').value = data.text;
-    document.getElementById('ai-result-sec').style.display = 'block';
-    document.getElementById('ai-result-sec').scrollIntoView({ behavior:'smooth' });
-    toast('추출 완료! 내용을 확인하고 수정하세요.', 'ok');
-  } catch(e) { toast(e.message, 'err'); }
-  finally { btn.textContent = '✨ AI로 내용 추출하기'; btn.disabled = false; }
-}
-
-async function generatePreview() {
-  const text = document.getElementById('ai-text-editor').value.trim();
-  if (!text) { toast('내용을 입력해주세요.', 'err'); return; }
-  const btn = document.getElementById('preview-btn');
-  btn.textContent = 'PDF 생성 중...'; btn.disabled = true;
-  try {
-    const lines = text.split('\n');
-    const bodyHTML = lines.map(line => {
-      if (!line.trim()) return '<div style="height:8px"></div>';
-      if (line.trim().length < 45 && /[:：]$/.test(line.trim())) return `<div style="font-size:15px;font-weight:600;color:#C8841A;margin:18px 0 6px">${line}</div>`;
-      return `<div style="margin-bottom:6px">${line}</div>`;
-    }).join('');
-    const htmlContent = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Noto Sans KR',sans-serif;padding:40px 48px;color:#1A1714;line-height:1.9;font-size:14px;background:#fff}</style></head><body>${bodyHTML}</body></html>`;
-    const blob = new Blob([htmlContent], {type:'text/html'});
-    document.getElementById('ai-preview').src = URL.createObjectURL(blob);
-    document.getElementById('ai-preview-wrap').style.display = 'block';
-    await generatePDFBlob(text);
-    document.getElementById('note-form-section').style.display = 'block';
-    document.getElementById('ai-preview-wrap').scrollIntoView({ behavior:'smooth' });
-    toast('미리보기 생성 완료! 내용이 맞으면 아래 양식을 채워주세요.', 'ok');
-  } catch(e) { toast('미리보기 생성 실패: '+e.message, 'err'); }
-  finally { btn.textContent = '👁 미리보기 생성 · PDF 변환 (수정 후 다시 클릭)'; btn.disabled = false; }
-}
-
-async function generatePDFBlob(text) {
-  const div = document.createElement('div');
-  div.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;padding:56px 64px;font-family:"Noto Sans KR",sans-serif;font-size:13px;line-height:1.9;color:#1A1714;background:#fff;z-index:-1';
-  div.innerHTML = text.split('\n').map(line => {
-    if (!line.trim()) return '<div style="height:8px"></div>';
-    if (line.trim().length < 45 && /[:：]$/.test(line.trim())) return `<div style="font-size:15px;font-weight:600;color:#C8841A;margin:16px 0 5px">${line}</div>`;
-    return `<div style="margin-bottom:5px">${line}</div>`;
-  }).join('');
-  document.body.appendChild(div);
-  try {
-    const { jsPDF } = window.jspdf;
-    const canvas = await html2canvas(div, {scale:1.5, useCORS:true, allowTaint:true, logging:false});
-    const imgData = canvas.toDataURL('image/jpeg', 0.85);
-    const pdf = new jsPDF({orientation:'p', unit:'mm', format:'a4'});
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const imgH = canvas.height * (pageW / canvas.width);
-    let posY = 0;
-    while (posY < imgH) {
-      if (posY > 0) pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, -posY, pageW, imgH);
-      posY += pageH;
-    }
-    _aiBlobPDF = pdf.output('blob');
-  } finally { document.body.removeChild(div); }
-}
-
 function calcEarn(v) {
   const p = parseInt(v), pd = document.getElementById('pdisplay');
   if (p >= 1000) {
     pd.style.display = 'flex';
-    document.getElementById('earn-amt').textContent = Math.floor(p*.8).toLocaleString()+'원';
-    document.getElementById('earn-prev').textContent = `판매 1건당 ${Math.floor(p*.8).toLocaleString()}원`;
-  } else { pd.style.display='none'; document.getElementById('earn-prev').textContent='판매가 입력 시 표시됩니다'; }
+    document.getElementById('earn-amt').textContent = Math.floor(p * .8).toLocaleString() + '원';
+    document.getElementById('earn-prev').textContent = `판매 1건당 ${Math.floor(p * .8).toLocaleString()}원`;
+  } else { pd.style.display = 'none'; document.getElementById('earn-prev').textContent = '판매가 입력 시 표시됩니다'; }
 }
-
 async function submitNote() {
   const sc = document.getElementById('up-sc')?.value.trim();
   const dt = document.getElementById('up-dt')?.value.trim();
@@ -1076,28 +716,30 @@ async function submitNote() {
   const sb = document.getElementById('up-sb')?.value.trim();
   const pr = parseInt(document.getElementById('up-pr')?.value);
   const ds = document.getElementById('up-ds')?.value.trim();
+  const file = document.getElementById('up-file')?.files[0];
   if (!sc||!dt||!pf||!sb||!pr||!ds) { toast('모든 필수 항목을 입력해주세요.', 'err'); return; }
-  let file;
-  if (_uploadMode === 'ai') {
-    if (!_aiBlobPDF) { toast('먼저 "미리보기 생성" 버튼을 눌러주세요.', 'err'); return; }
-    file = new File([_aiBlobPDF], `${sb}_노트.pdf`, {type:'application/pdf'});
-  } else {
-    file = document.getElementById('up-file')?.files[0];
-    if (!file) { toast('PDF 파일을 선택해주세요.', 'err'); return; }
-  }
+  if (!file) { toast('PDF 파일을 선택해주세요.', 'err'); return; }
+
   try {
     toast('PDF 업로드 중...');
     const formData = new FormData();
     formData.append('file', file);
     const token = localStorage.getItem('nm_token');
-    const uploadRes = await fetch(API+'/notes/upload', {method:'POST', headers:{'Authorization':'Bearer '+token}, body:formData});
-    if (!uploadRes.ok) { const e = await uploadRes.json(); throw new Error(e.error||'파일 업로드 실패'); }
+    const uploadRes = await fetch(API + '/notes/upload', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: formData
+    });
+    if (!uploadRes.ok) {
+      const e = await uploadRes.json();
+      throw new Error(e.error || '파일 업로드 실패');
+    }
     const { key } = await uploadRes.json();
     const sm = document.getElementById('up-sm')?.value;
-    await api('/notes', {method:'POST', body:JSON.stringify({title:`${sb} ${sm} 정리 노트`, school:sc, department:dt, professor:pf+' 교수', subject:sb, semester:sm, price:pr, description:ds, file_key:key})});
+    await api('/notes', { method: 'POST', body: JSON.stringify({ title: `${sb} ${sm} 정리 노트`, school: sc, department: dt, professor: pf + ' 교수', subject: sb, semester: sm, price: pr, description: ds, file_key: key }) });
     toast('노트가 즉시 게시되었어요! ⚡', 'ok');
     loadNotes(); go('seller');
-  } catch(e) { toast(e.message, 'err'); }
+  } catch (e) { toast(e.message, 'err'); }
 }
 
 // ── 판매자 대시보드 ──
@@ -1136,7 +778,7 @@ async function loadSellerDash() {
         ${!(notes||[]).length ? '<div class="empty-state">아직 등록한 노트가 없어요.</div>' : (notes||[]).map(n => {
           const noteTxs = (transactions||[]).filter(t => t.note_id === n.id);
           const ne = noteTxs.reduce((s, t) => s + (t.net_amount||0), 0);
-          return `<div class="nr" style="flex-wrap:wrap;gap:10px"><div class="nr-d" style="background:${n.color||'#C8841A'}"></div><div class="nr-i"><div class="nr-t">${n.title}</div><div class="nr-m">${n.school||''} · ${Number(n.price).toLocaleString()}원 · <span class="badge ${n.status==='live'?'bl':'br'}">${n.status==='live'?'게시중':'삭제됨'}</span></div></div><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div class="nrs"><div class="nrs-v">${n.download_count||0}</div><div class="nrs-l">다운로드</div></div><div class="nrs"><div class="nrs-v">${ne.toLocaleString()}원</div><div class="nrs-l">수익</div></div>${n.status==='live'?`<button class="btn btn-sm" style="background:#FFF8E1;color:#B8860B;border:1px solid #DAA520;font-size:11px" onclick="openGradeBadgeForm('${n.id}')">🏆 성적 인증 신청</button><button class="btn btn-sm btn-s" style="font-size:11px" onclick="openExamAnalysisUpload('${n.id}')">📊 족보 분석 업로드</button>`:''}</div></div>`;
+          return `<div class="nr"><div class="nr-d" style="background:${n.color||'#C8841A'}"></div><div class="nr-i"><div class="nr-t">${n.title}</div><div class="nr-m">${n.school||''} · ${Number(n.price).toLocaleString()}원 · <span class="badge ${n.status==='live'?'bl':'br'}">${n.status==='live'?'게시중':'삭제됨'}</span></div></div><div style="display:flex;gap:12px"><div class="nrs"><div class="nrs-v">${n.download_count||0}</div><div class="nrs-l">다운로드</div></div><div class="nrs"><div class="nrs-v">${ne.toLocaleString()}원</div><div class="nrs-l">수익</div></div></div></div>`;
         }).join('')}
       </div>
       <div class="dash-panel">
@@ -1300,7 +942,10 @@ async function loadAdminNotes() {
         <td class="tm">${(n.created_at||'').slice(0,10)}</td>
         <td>${n.download_count||0}</td>
         <td>${Number(n.pending_reports||0)>0?`<span class="badge bp">신고 ${n.pending_reports}</span>`:'<span style="font-size:11px;color:var(--ink-m)">없음</span>'}</td>
-        <td><div class="at-acts">${n.status==='live'?`<button class="btn btn-sm btn-d" onclick="adminDelNoteTable('${n.id}')">삭제</button>`:''}</div></td>
+        <td><div class="at-acts">
+          <button class="btn btn-sm" style="background:var(--teal);color:#fff;border-color:var(--teal)" onclick="adminDownloadNote('` + n.id + `','` + (n.title||'').replace(/'/g,'') + `')">열람</button>
+          ${n.status==='live'?`<button class="btn btn-sm btn-d" onclick="adminDelNoteTable('${n.id}')">삭제</button>`:''}
+        </div></td>
       </tr>`).join('');
   } catch (e) { toast(e.message, 'err'); }
 }
@@ -1343,11 +988,10 @@ async function changeUserStatus(id, status) {
 }
 
 function showA(tab) {
-  ['ov','log','settle','rep','na','users','badges'].forEach(t => {
+  ['ov','log','settle','rep','na','users'].forEach(t => {
     document.getElementById('a-'+t)?.classList.toggle('active', t === tab);
     document.getElementById('anav-'+t)?.classList.toggle('active', t === tab);
   });
-  if (tab === 'badges') loadAdminBadges();
 }
 
 // ── AUTH MODAL ──
@@ -1420,319 +1064,6 @@ async function openSellerProfile(sellerId) {
   }
 }
 
-// ── 내 구매 모달 ──
-async function openMyPurchases() {
-  if (!cur) { openAM('login'); return; }
-  document.getElementById('modal-purchases').classList.add('open');
-  document.body.style.overflow = 'hidden';
-  const list = document.getElementById('purchases-list');
-  list.innerHTML = '<div class="loading" style="margin:40px auto"></div>';
-  try {
-    const { transactions } = await api('/payment/my');
-    if (!transactions.length) {
-      list.innerHTML = '<p style="text-align:center;color:var(--ink-m);padding:40px">아직 구매한 노트가 없어요.</p>';
-      return;
-    }
-    // 각 노트의 스터디 그룹 인원도 비동기로 가져오기
-    const studyCounts = {};
-    await Promise.all(transactions.map(async t => {
-      try {
-        const sg = await api('/study/' + t.note_id + '/members');
-        studyCounts[t.note_id] = sg.count || 0;
-      } catch { studyCounts[t.note_id] = 0; }
-    }));
-
-    list.innerHTML = transactions.map(t => `
-      <div style="border:1px solid var(--bd);border-radius:12px;padding:16px 18px;margin-bottom:12px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px">
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.note_title||'(제목 없음)'}</div>
-            <div style="font-size:12px;color:var(--ink-m);margin-top:3px">${new Date(t.created_at).toLocaleDateString('ko-KR')} · ${Number(t.amount).toLocaleString()}원</div>
-          </div>
-          <div style="display:flex;gap:8px;flex-shrink:0">
-            <button class="btn btn-s btn-sm" style="font-size:13px" onclick="purchaseDownload('${t.note_id}')">📥 다운로드</button>
-            <button class="btn btn-a btn-sm" style="font-size:13px" onclick="purchaseAI('${t.note_id}','${(t.note_title||'').replace(/'/g,'&apos;')}')">✨ AI 질문</button>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;padding-top:8px;border-top:1px solid var(--bd)">
-          <span style="font-size:12px;color:var(--ink-m)">👥 ${studyCounts[t.note_id]}명이 함께 공부 중</span>
-          <button class="btn btn-sm" style="font-size:11px;background:var(--teal-l);color:var(--teal);border:1px solid var(--teal)" onclick="openStudyGroupModal('${t.note_id}','${(t.note_title||'').replace(/'/g,'&apos;')}')">스터디 참여</button>
-        </div>
-      </div>`).join('');
-  } catch (e) {
-    list.innerHTML = `<p style="text-align:center;color:var(--red);padding:40px">${e.message}</p>`;
-  }
-}
-function closeMyPurchases(e) {
-  if (e && e.target !== document.getElementById('modal-purchases')) return;
-  document.getElementById('modal-purchases').classList.remove('open');
-  document.body.style.overflow = '';
-}
-function purchaseDownload(noteId) {
-  const token = localStorage.getItem('nm_token');
-  window.location.href = `${API}/notes/${noteId}/download?token=${encodeURIComponent(token)}`;
-}
-function purchaseAI(noteId, noteTitle) {
-  document.getElementById('modal-purchases').classList.remove('open');
-  document.body.style.overflow = '';
-  openQA(noteId, noteTitle);
-}
-
-// ── AI Q&A ──
-let _qaCurrentNoteId = null;
-function openQA(noteId, noteTitle) {
-  _qaCurrentNoteId = noteId;
-  document.getElementById('qa-note-title').textContent = noteTitle;
-  document.getElementById('qa-body').innerHTML = '<div class="qa-bubble qa-ai">안녕하세요! 이 노트에 대해 궁금한 점이 있으면 무엇이든 물어보세요. 📚</div>';
-  document.getElementById('qa-input').value = '';
-  document.getElementById('modal-qa').classList.add('open');
-}
-function closeQA(e) {
-  if (e && e.target !== document.getElementById('modal-qa')) return;
-  document.getElementById('modal-qa').classList.remove('open');
-}
-function qaKeyDown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQA(); }
-}
-async function sendQA() {
-  const input = document.getElementById('qa-input');
-  const q = input.value.trim();
-  if (!q || !_qaCurrentNoteId) return;
-  const body = document.getElementById('qa-body');
-  const sendBtn = document.getElementById('qa-send-btn');
-  input.value = ''; sendBtn.disabled = true;
-  body.innerHTML += `<div class="qa-bubble qa-user">${q}</div>`;
-  body.innerHTML += `<div class="qa-bubble qa-ai" id="qa-loading-msg">🤔 답변 생성 중...</div>`;
-  body.scrollTop = body.scrollHeight;
-  try {
-    const data = await api('/ai/qa', {method:'POST', body:JSON.stringify({note_id:_qaCurrentNoteId, question:q})});
-    document.getElementById('qa-loading-msg').remove();
-    body.innerHTML += `<div class="qa-bubble qa-ai">${data.answer}</div>`;
-  } catch(e) {
-    document.getElementById('qa-loading-msg').textContent = '오류: ' + e.message;
-  } finally {
-    sendBtn.disabled = false;
-    body.scrollTop = body.scrollHeight;
-  }
-}
-
-// ── AI 족보 분석 ──
-async function loadExamAnalysis(noteId) {
-  const section = document.getElementById('m-exam-analysis');
-  if (!section) return;
-  try {
-    const data = await api('/ai/exam-analysis/' + noteId);
-    if (data.analysis) {
-      document.getElementById('m-exam-text').textContent = data.analysis;
-      section.style.display = 'block';
-    } else {
-      section.style.display = 'none';
-    }
-  } catch {
-    section.style.display = 'none';
-  }
-}
-
-// ── 스터디 그룹 섹션 (노트 상세 모달용) ──
-async function loadStudySection(noteId, isSeller) {
-  const el = document.getElementById('m-study-section');
-  if (!el) return;
-  try {
-    const data = await api('/study/' + noteId + '/members');
-    const { members, joined, count } = data;
-    el.innerHTML = `
-      <div style="margin-top:20px;padding:16px;background:var(--teal-l);border:1px solid #80CBC4;border-radius:12px">
-        <div style="font-size:14px;font-weight:700;color:var(--teal);margin-bottom:10px">👥 스터디 그룹 ${count}명 참여 중</div>
-        ${members.length ? `<div style="margin-bottom:12px;display:flex;flex-direction:column;gap:6px">${members.map(m=>`<div style="font-size:13px;background:#fff;border-radius:8px;padding:8px 12px;display:flex;gap:8px;align-items:center"><span style="font-weight:600">${m.name}</span><span style="color:var(--ink-m);font-size:11px">${m.school||''}${m.department?' · '+m.department:''}</span>${m.contact?`<span style="color:var(--teal);font-size:11px;margin-left:auto">${m.contact}</span>`:''}</div>`).join('')}</div>` : '<div style="font-size:13px;color:var(--teal);margin-bottom:12px">아직 참여자가 없어요. 첫 번째로 참여해보세요!</div>'}
-        ${!joined ? `<div style="display:flex;gap:8px;align-items:center"><input id="study-contact-input" style="flex:1;border:1px solid #80CBC4;border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;outline:none" placeholder="연락처 (선택 - 오픈카톡 링크 등)"><button class="btn btn-sm btn-g" onclick="joinStudyGroup('${noteId}')">참여하기</button></div>` : `<button class="btn btn-sm btn-d" style="font-size:12px" onclick="leaveStudyGroup('${noteId}')">그룹 탈퇴</button>`}
-      </div>`;
-  } catch (e) {
-    el.innerHTML = '';
-  }
-}
-
-async function joinStudyGroup(noteId) {
-  const contact = document.getElementById('study-contact-input')?.value.trim();
-  try {
-    const data = await api('/study/' + noteId + '/join', { method: 'POST', body: JSON.stringify({ contact }) });
-    toast(`스터디 그룹에 참여했어요! 현재 ${data.count}명`, 'ok');
-    loadStudySection(noteId, false);
-  } catch (e) { toast(e.message, 'err'); }
-}
-
-async function leaveStudyGroup(noteId) {
-  if (!confirm('스터디 그룹에서 탈퇴하시겠어요?')) return;
-  try {
-    await api('/study/' + noteId + '/leave', { method: 'DELETE' });
-    toast('스터디 그룹에서 탈퇴했어요.', 'ok');
-    loadStudySection(noteId, false);
-  } catch (e) { toast(e.message, 'err'); }
-}
-
-// ── 스터디 그룹 모달 (내 구매 탭) ──
-let _studyModalNoteId = null;
-async function openStudyGroupModal(noteId, noteTitle) {
-  _studyModalNoteId = noteId;
-  document.getElementById('study-modal-title').textContent = noteTitle;
-  document.getElementById('study-modal-content').innerHTML = '<div class="loading" style="margin:20px auto"></div>';
-  document.getElementById('modal-study').classList.add('open');
-  document.body.style.overflow = 'hidden';
-  await refreshStudyModal(noteId);
-}
-
-async function refreshStudyModal(noteId) {
-  const content = document.getElementById('study-modal-content');
-  try {
-    const data = await api('/study/' + noteId + '/members');
-    const { members, joined, count } = data;
-    content.innerHTML = `
-      <div style="font-size:14px;font-weight:600;color:var(--teal);margin-bottom:12px">현재 ${count}명 참여 중</div>
-      ${members.length ? `<div style="margin-bottom:16px;display:flex;flex-direction:column;gap:8px">${members.map(m=>`<div style="font-size:13px;background:var(--cream-d);border-radius:8px;padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-weight:600">${m.name}</span><span style="color:var(--ink-m);font-size:11px">${m.school||''}</span>${m.contact?`<span style="color:var(--teal);font-size:12px;margin-left:auto">${m.contact}</span>`:''}</div>`).join('')}</div>` : '<div style="color:var(--ink-m);font-size:13px;margin-bottom:16px">아직 참여자가 없어요.</div>'}
-      ${!joined ? `<div style="border-top:1px solid var(--bd);padding-top:16px"><div style="font-size:13px;font-weight:600;margin-bottom:8px">스터디 그룹 참여하기</div><input id="sm-contact" style="width:100%;border:1.5px solid var(--bd);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none;margin-bottom:10px" placeholder="연락처 (선택 - 오픈카톡 링크 등)"><button class="btn btn-g" style="width:100%" onclick="joinStudyGroupModal('${noteId}')">참여하기</button></div>` : `<div style="border-top:1px solid var(--bd);padding-top:14px"><button class="btn btn-d btn-sm" onclick="leaveStudyGroupModal('${noteId}')">그룹 탈퇴</button></div>`}`;
-  } catch (e) {
-    content.innerHTML = `<div style="color:var(--red);font-size:13px">${e.message}</div>`;
-  }
-}
-
-async function joinStudyGroupModal(noteId) {
-  const contact = document.getElementById('sm-contact')?.value.trim();
-  try {
-    const data = await api('/study/' + noteId + '/join', { method: 'POST', body: JSON.stringify({ contact }) });
-    toast(`스터디 그룹에 참여했어요! 현재 ${data.count}명`, 'ok');
-    refreshStudyModal(noteId);
-  } catch (e) { toast(e.message, 'err'); }
-}
-
-async function leaveStudyGroupModal(noteId) {
-  if (!confirm('스터디 그룹에서 탈퇴하시겠어요?')) return;
-  try {
-    await api('/study/' + noteId + '/leave', { method: 'DELETE' });
-    toast('탈퇴했어요.', 'ok');
-    refreshStudyModal(noteId);
-  } catch (e) { toast(e.message, 'err'); }
-}
-
-function closeStudyModal(e) {
-  if (e && e.target !== document.getElementById('modal-study')) return;
-  document.getElementById('modal-study').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-// ── 성적 인증 신청 (판매자) ──
-function openGradeBadgeForm(noteId) {
-  document.getElementById('gb-note-id').value = noteId;
-  document.getElementById('gb-grade').value = '';
-  document.getElementById('gb-file').value = '';
-  document.getElementById('modal-grade-badge').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeGradeBadgeModal(e) {
-  if (e && e.target !== document.getElementById('modal-grade-badge')) return;
-  document.getElementById('modal-grade-badge').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-async function submitGradeBadge() {
-  const noteId = document.getElementById('gb-note-id').value;
-  const grade = document.getElementById('gb-grade').value.trim();
-  const file = document.getElementById('gb-file').files[0];
-  if (!grade) { toast('학점을 입력해주세요.', 'err'); return; }
-  if (!file) { toast('스크린샷을 선택해주세요.', 'err'); return; }
-  const btn = document.getElementById('gb-submit-btn');
-  btn.disabled = true; btn.textContent = '제출 중...';
-  try {
-    const token = localStorage.getItem('nm_token');
-    const formData = new FormData();
-    formData.append('screenshot', file);
-    formData.append('grade', grade);
-    const res = await fetch(API + '/study/' + noteId + '/grade-badge', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token },
-      body: formData,
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || '제출 실패');
-    toast(data.message || '성적 인증 신청 완료!', 'ok');
-    document.getElementById('modal-grade-badge').classList.remove('open');
-    document.body.style.overflow = '';
-  } catch (e) { toast(e.message, 'err'); }
-  finally { btn.disabled = false; btn.textContent = '신청 제출'; }
-}
-
-// ── 족보 분석 업로드 (판매자) ──
-function openExamAnalysisUpload(noteId) {
-  document.getElementById('ea-note-id').value = noteId;
-  document.getElementById('ea-file').value = '';
-  document.getElementById('modal-exam-analysis').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeExamAnalysisModal(e) {
-  if (e && e.target !== document.getElementById('modal-exam-analysis')) return;
-  document.getElementById('modal-exam-analysis').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-async function submitExamAnalysis() {
-  const noteId = document.getElementById('ea-note-id').value;
-  const file = document.getElementById('ea-file').files[0];
-  if (!file) { toast('파일을 선택해주세요.', 'err'); return; }
-  const btn = document.getElementById('ea-submit-btn');
-  btn.disabled = true; btn.textContent = 'AI 분석 중... (최대 1분)';
-  try {
-    const token = localStorage.getItem('nm_token');
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('note_id', noteId);
-    const res = await fetch(API + '/ai/exam-analysis', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token },
-      body: formData,
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || '분석 실패');
-    toast('족보 분석이 완료되었어요!', 'ok');
-    document.getElementById('modal-exam-analysis').classList.remove('open');
-    document.body.style.overflow = '';
-  } catch (e) { toast(e.message, 'err'); }
-  finally { btn.disabled = false; btn.textContent = 'AI 분석 시작'; }
-}
-
-// ── 관리자: 성적인증 배지 관리 ──
-async function loadAdminBadges() {
-  const tbody = document.getElementById('badges-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="7" class="loading"></td></tr>';
-  try {
-    const data = await api('/admin/grade-badges');
-    const badges = data.badges || [];
-    tbody.innerHTML = !badges.length
-      ? '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--ink-m)">신청 내역이 없어요</td></tr>'
-      : badges.map(b => `<tr>
-        <td class="tb" style="cursor:pointer;color:var(--a)" onclick="openNote('${b.note_id}')">${b.note_title}</td>
-        <td class="tm">${b.seller_name}</td>
-        <td class="tb">${b.grade}</td>
-        <td><span class="badge ${b.status==='approved'?'bl':b.status==='rejected'?'br':'bp'}">${b.status==='approved'?'승인':b.status==='rejected'?'거절':'검토중'}</span></td>
-        <td class="tm">${(b.created_at||'').slice(0,10)}</td>
-        <td class="tm" style="font-size:12px">${b.admin_note||'-'}</td>
-        <td><div class="at-acts">
-          ${b.status!=='approved'?`<button class="btn btn-sm btn-g" onclick="processBadge('${b.id}','approve')">승인</button>`:''}
-          ${b.status!=='rejected'?`<button class="btn btn-sm btn-d" onclick="processBadge('${b.id}','reject')">거절</button>`:''}
-        </div></td>
-      </tr>`).join('');
-  } catch (e) { toast(e.message, 'err'); }
-}
-
-async function processBadge(id, action) {
-  const admin_note = action === 'reject' ? (prompt('거절 사유 (선택사항):') || '') : '';
-  try {
-    await api('/admin/grade-badges/' + id, { method: 'PATCH', body: JSON.stringify({ action, admin_note }) });
-    toast(action === 'approve' ? '승인되었어요.' : '거절되었어요.', 'ok');
-    loadAdminBadges();
-  } catch (e) { toast(e.message, 'err'); }
-}
-
 // ── TOAST ──
 let _tt = null;
 function toast(msg, type = 'd') {
@@ -1743,11 +1074,8 @@ function toast(msg, type = 'd') {
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    closeNM(); closeAM(); closeRepModal(); closeQA();
-    ['modal-rep','modal-qa','modal-study','modal-grade-badge','modal-exam-analysis'].forEach(id => {
-      document.getElementById(id)?.classList.remove('open');
-    });
-    document.body.style.overflow = '';
+    closeNM(); closeAM(); closeRepModal();
+    document.getElementById('modal-rep').classList.remove('open');
   }
 });
 
