@@ -71,21 +71,14 @@ app.get('/api/debug-r2', async (req, res) => {
     });
   } catch(e) {}
 
-  // 5) SDK 테스트
+  // 5) r2.dev 공개 URL 테스트 (Cloudflare CDN 경유)
+  const publicUrl = process.env.R2_PUBLIC_URL || 'https://pub-4d66a8676c2e4bc2b3c13d3ce03e2152.r2.dev';
+  results.publicUrl = publicUrl;
   try {
-    const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
-    const { NodeHttpHandler } = require('@smithy/node-http-handler');
-    const testR2 = new S3Client({
-      region: 'auto',
-      endpoint: r2Endpoint,
-      credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY },
-      forcePathStyle: true,
-      requestHandler: new NodeHttpHandler({ httpsAgent: new https.Agent({ rejectUnauthorized: false, minVersion: 'TLSv1.2' }) }),
-    });
-    const d = await testR2.send(new ListObjectsV2Command({ Bucket: process.env.R2_PRIVATE_BUCKET, MaxKeys: 1 }));
-    results.sdk = { ok: true, keyCount: d.KeyCount };
-  } catch(e) {
-    results.sdk = { ok: false, error: e.message?.substring(0, 200) };
+    const pRes = await fetch(publicUrl, { signal: AbortSignal.timeout(5000) });
+    results.r2dev = { ok: true, status: pRes.status };
+  } catch (e) {
+    results.r2dev = { ok: false, error: e.cause?.code || e.code || e.message };
   }
 
   res.json(results);
