@@ -19,6 +19,8 @@ app.use('/api/auth',    require('./routes/auth'));
 app.use('/api/notes',   require('./routes/notes'));
 app.use('/api/payment', require('./routes/payment'));
 app.use('/api/admin',   require('./routes/admin'));
+app.use('/api/ai',      require('./routes/ai'));
+app.use('/api/study',   require('./routes/study'));
 
 // 서버 상태 확인용 API
 app.get('/api/health', (req, res) => {

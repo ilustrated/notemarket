@@ -589,6 +589,10 @@ async function openNote(id) {
       acts.innerHTML = '<span style="font-size:12px;color:var(--ink-m);background:var(--cream-d);padding:8px 12px;border-radius:10px">🛡 관리자 뷰</span>' +
         '<button class="btn btn-sm" style="background:var(--teal);color:#fff;border-color:var(--teal)" onclick="adminDownloadNote(\'' + n.id + '\',\'' + (n.title||'').replace(/'/g,'') + '\')">📥 노트 열람</button>' +
         (n.status === 'live' ? '<button class="btn btn-sm btn-d" onclick="adminDelNote(\'' + n.id + '\')">노트 삭제</button>' : '<span class="badge br">삭제됨</span>');
+    } else if (data.purchased) {
+      acts.innerHTML = `<button class="btn-buy" style="background:var(--teal)" onclick="downloadNote('${n.id}','${(n.title||'').replace(/'/g,'')}')">📥 다운로드</button><button class="btn-rpt" onclick="openRepModal()">🚨 신고</button>`;
+    } else if (cur && n.seller_id === cur.id) {
+      acts.innerHTML = `<button class="btn-buy" style="background:var(--teal)" onclick="downloadNote('${n.id}','${(n.title||'').replace(/'/g,'')}')">📥 내 노트 다운로드</button>`;
     } else {
       acts.innerHTML = `<button class="btn-buy" onclick="buyNote()">구매 ${Number(n.price).toLocaleString()}원</button><button class="btn-wl" onclick="toast('찜 목록에 추가되었어요 ♡')">♡</button><button class="btn-rpt" onclick="openRepModal()">🚨 신고</button>`;
     }
@@ -610,19 +614,35 @@ function closeNM(e) {
 }
 
 
-// -- 관리자 노트 열람 --
-async function adminDownloadNote(id, title) {
+// -- 노트 다운로드 (PDF 바이너리 직접 수신) --
+async function downloadNote(id, title) {
   try {
-    toast('다운로드 링크 생성 중...');
-    var data = await api('/notes/' + id + '/download');
-    if (data.downloadUrl) {
-      // 새 탭에서 직접 열기 (CORS 문제 없음)
-      window.open(data.downloadUrl, '_blank');
-      toast('노트가 새 탭에서 열렸어요.', 'ok');
+    toast('다운로드 중...');
+    const token = localStorage.getItem('nm_token');
+    const res = await fetch(API + '/notes/' + id + '/download', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: '다운로드 실패' }));
+      throw new Error(err.error || '다운로드 실패');
     }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (title || 'note') + '.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('다운로드 완료!', 'ok');
   } catch(e) {
     toast(e.message, 'err');
   }
+}
+// -- 관리자 노트 열람 --
+async function adminDownloadNote(id, title) {
+  await downloadNote(id, title);
 }
 
 // ── 구매 ──

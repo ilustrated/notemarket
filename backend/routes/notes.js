@@ -1,5 +1,4 @@
 const express  = require('express');
-const https    = require('https');
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { db, authenticate, requireAdmin } = require('../middleware/auth');
@@ -59,215 +58,6 @@ router.get('/', async (req, res) => {
     res.json({ notes: result.rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: '서버 오류가 발생했어요.' });
-  }
-});
-
-// ── 노트 상세 조회 ──
-// GET /api/notes/:id
-// 관리자는 삭제된 노트도 조회 가능
-router.get('/:id', async (req, res) => {
-  try {
-    // 요청한 사람이 관리자인지 확인
-    let isAdmin = false;
-    const authHeader = req.headers.authorization;
-    if (authHeader) {
-      try {
-        const jwt = require('jsonwebtoken');
-        const decoded = jwt.verify(authHeader.replace('Bearer ', ''), process.env.JWT_ACCESS_SECRET);
-        const userRes = await db.query('SELECT role FROM users WHERE id = $1', [decoded.id]);
-        isAdmin = userRes.rows[0]?.role === 'admin';
-      } catch {}
-    }
-
-    const statusFilter = isAdmin ? "n.status IN ('live','removed')" : "n.status = 'live'";
-
-    const result = await db.query(`
-      SELECT n.*, u.name AS seller_name, u.school AS seller_school,
-        COALESCE(AVG(r.rating), 0) AS avg_rating,
-        COUNT(DISTINCT r.id) AS review_count,
-        COALESCE(
-          JSON_AGG(
-            JSON_BUILD_OBJECT('name', r.reviewer_name, 'rating', r.rating, 'content', r.content, 'created_at', r.created_at)
-            ORDER BY r.created_at DESC
-          ) FILTER (WHERE r.id IS NOT NULL), '[]'
-        ) AS reviews
-      FROM notes n
-      JOIN users u ON u.id = n.seller_id
-      LEFT JOIN reviews r ON r.note_id = n.id
-      WHERE n.id = $1 AND ${statusFilter}
-      GROUP BY n.id, u.name, u.school
-    `, [req.params.id]);
-
-    if (!result.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
-    res.json({ note: result.rows[0] });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: '서버 오류가 발생했어요.' });
-  }
-});
-
-// ── PDF 업로드 URL 발급 ──
-// POST /api/notes/upload-url
-router.post('/upload-url', authenticate, async (req, res) => {
-  try {
-    const { filename } = req.body;
-    const key = `notes/${req.user.id}/${Date.now()}_${filename || 'note.pdf'}`;
-
-    const uploadUrl = await getSignedUrl(r2, new PutObjectCommand({
-      Bucket: process.env.R2_PRIVATE_BUCKET,
-      Key: key,
-      ContentType: 'application/pdf',
-    }), { expiresIn: 600 }); // 10분 유효
-
-    res.json({ uploadUrl, key });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Upload URL 발급 실패.' });
-  }
-});
-
-// ── 노트 등록 (업로드 완료 후 호출) ──
-// POST /api/notes
-router.post('/', authenticate, async (req, res) => {
-  try {
-    const { title, school, department, professor, subject, semester, price, description, file_key } = req.body;
-
-    if (!title || !price || !file_key)
-      return res.status(400).json({ error: '제목, 가격, 파일은 필수예요.' });
-
-    const result = await db.query(`
-      INSERT INTO notes (seller_id, title, school, department, professor, subject, semester, price, description, file_key, status)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'live')
-      RETURNING *
-    `, [req.user.id, title, school, department, professor, subject, semester, price, description, file_key]);
-
-    res.json({ note: result.rows[0] });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: '서버 오류가 발생했어요.' });
-  }
-});
-
-// ── 내 노트 삭제 (본인만 가능) ──
-// DELETE /api/notes/:id
-router.delete('/:id', authenticate, async (req, res) => {
-  try {
-    const result = await db.query(
-      'SELECT id, seller_id FROM notes WHERE id = $1', [req.params.id]
-    );
-    if (!result.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
-    if (result.rows[0].seller_id !== req.user.id && req.user.role !== 'admin')
-      return res.status(403).json({ error: '삭제 권한이 없어요.' });
-
-    await db.query("UPDATE notes SET status = 'removed' WHERE id = $1", [req.params.id]);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: '서버 오류가 발생했어요.' });
-  }
-});
-
-// ── 다운로드 (https 모듈 직접 사용 - SSL 완전 우회) ──
-// GET /api/notes/:id/download
-router.get('/:id/download', authenticate, async (req, res) => {
-  try {
-    const tx = await db.query(
-      "SELECT id FROM transactions WHERE note_id=$1 AND buyer_id=$2 AND status='completed'",
-      [req.params.id, req.user.id]
-    );
-    if (!tx.rows[0] && req.user.role !== 'admin')
-      return res.status(403).json({ error: '구매 후 다운로드할 수 있어요.' });
-
-    const note = await db.query('SELECT file_key, title FROM notes WHERE id = $1', [req.params.id]);
-    if (!note.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
-
-    const title = note.rows[0].title || 'note';
-    const filename = encodeURIComponent(title) + '.pdf';
-
-    // 1단계: Presigned URL 생성 (SDK 사용)
-    const signedUrl = await getSignedUrl(r2, new GetObjectCommand({
-      Bucket: process.env.R2_PRIVATE_BUCKET,
-      Key: note.rows[0].file_key,
-    }), { expiresIn: 3600 });
-
-    // 2단계: https 모듈로 직접 다운로드 (SSL 검증 완전 비활성화)
-    const fileBuffer = await new Promise((resolve, reject) => {
-      const chunks = [];
-      const agent = new https.Agent({ rejectUnauthorized: false });
-      https.get(signedUrl, { agent }, (response) => {
-        if (response.statusCode !== 200) {
-          reject(new Error('R2 응답 오류: ' + response.statusCode));
-          return;
-        }
-        response.on('data', (chunk) => chunks.push(chunk));
-        response.on('end', () => resolve(Buffer.concat(chunks)));
-        response.on('error', reject);
-      }).on('error', reject);
-    });
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
-    res.setHeader('Content-Length', fileBuffer.length);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    return res.send(fileBuffer);
-  } catch (err) {
-    console.error('다운로드 오류:', err.message);
-    if (!res.headersSent) {
-      return res.status(500).json({ error: '다운로드 실패: ' + err.message });
-    }
-  }
-});
-
-// ── 리뷰 작성 (구매자만 가능) ──
-// POST /api/notes/:id/reviews
-router.post('/:id/reviews', authenticate, async (req, res) => {
-  try {
-    const { rating, content } = req.body;
-    if (!rating || rating < 1 || rating > 5)
-      return res.status(400).json({ error: '평점은 1~5 사이여야 해요.' });
-
-    // 구매 확인
-    const tx = await db.query(
-      "SELECT id FROM transactions WHERE note_id=$1 AND buyer_id=$2 AND status='completed'",
-      [req.params.id, req.user.id]
-    );
-    if (!tx.rows[0]) return res.status(403).json({ error: '구매한 노트에만 리뷰를 작성할 수 있어요.' });
-
-    // 중복 리뷰 방지
-    const dup = await db.query('SELECT id FROM reviews WHERE note_id=$1 AND buyer_id=$2', [req.params.id, req.user.id]);
-    if (dup.rows[0]) return res.status(400).json({ error: '이미 리뷰를 작성하셨어요.' });
-
-    await db.query(
-      'INSERT INTO reviews (note_id, buyer_id, reviewer_name, rating, content) VALUES ($1,$2,$3,$4,$5)',
-      [req.params.id, req.user.id, req.user.name, rating, content]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: '서버 오류가 발생했어요.' });
-  }
-});
-
-// ── 노트 신고 ──
-// POST /api/notes/:id/report
-router.post('/:id/report', authenticate, async (req, res) => {
-  try {
-    const { type, detail } = req.body;
-    if (!type) return res.status(400).json({ error: '신고 유형을 선택해주세요.' });
-
-    // 중복 신고 방지
-    const dup = await db.query(
-      "SELECT id FROM reports WHERE note_id=$1 AND reporter_id=$2 AND status='pending'",
-      [req.params.id, req.user.id]
-    );
-    if (dup.rows[0]) return res.status(400).json({ error: '이미 신고한 노트예요.' });
-
-    const note = await db.query('SELECT title FROM notes WHERE id = $1', [req.params.id]);
-    await db.query(
-      'INSERT INTO reports (note_id, note_title, reporter_id, reporter_name, type, detail) VALUES ($1,$2,$3,$4,$5,$6)',
-      [req.params.id, note.rows[0]?.title, req.user.id, req.user.name, type, detail]
-    );
-    res.json({ success: true });
-  } catch (err) {
     res.status(500).json({ error: '서버 오류가 발생했어요.' });
   }
 });
@@ -368,6 +158,221 @@ router.get('/seller/:sellerId/profile', async (req, res) => {
     });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: '서버 오류가 발생했어요.' });
+  }
+});
+
+// ── 노트 상세 조회 ──
+// GET /api/notes/:id
+// 관리자는 삭제된 노트도 조회 가능
+router.get('/:id', async (req, res) => {
+  try {
+    // 요청한 사람이 관리자인지, 로그인 사용자 ID 확인
+    let isAdmin = false;
+    let userId = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(authHeader.replace('Bearer ', ''), process.env.JWT_ACCESS_SECRET);
+        userId = decoded.id;
+        const userRes = await db.query('SELECT role FROM users WHERE id = $1', [decoded.id]);
+        isAdmin = userRes.rows[0]?.role === 'admin';
+      } catch {}
+    }
+
+    const statusFilter = isAdmin ? "n.status IN ('live','removed')" : "n.status = 'live'";
+
+    const result = await db.query(`
+      SELECT n.*, u.name AS seller_name, u.school AS seller_school,
+        COALESCE(AVG(r.rating), 0) AS avg_rating,
+        COUNT(DISTINCT r.id) AS review_count,
+        COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT('name', r.reviewer_name, 'rating', r.rating, 'content', r.content, 'created_at', r.created_at)
+            ORDER BY r.created_at DESC
+          ) FILTER (WHERE r.id IS NOT NULL), '[]'
+        ) AS reviews
+      FROM notes n
+      JOIN users u ON u.id = n.seller_id
+      LEFT JOIN reviews r ON r.note_id = n.id
+      WHERE n.id = $1 AND ${statusFilter}
+      GROUP BY n.id, u.name, u.school
+    `, [req.params.id]);
+
+    if (!result.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
+
+    // 구매 여부 확인
+    let purchased = false;
+    if (userId) {
+      const txCheck = await db.query(
+        "SELECT id FROM transactions WHERE note_id=$1 AND buyer_id=$2 AND status='completed'",
+        [req.params.id, userId]
+      );
+      purchased = !!txCheck.rows[0];
+    }
+
+    res.json({ note: result.rows[0], purchased });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '서버 오류가 발생했어요.' });
+  }
+});
+
+// ── PDF 업로드 URL 발급 ──
+// POST /api/notes/upload-url
+router.post('/upload-url', authenticate, async (req, res) => {
+  try {
+    const { filename } = req.body;
+    const key = `notes/${req.user.id}/${Date.now()}_${filename || 'note.pdf'}`;
+
+    const uploadUrl = await getSignedUrl(r2, new PutObjectCommand({
+      Bucket: process.env.R2_PRIVATE_BUCKET,
+      Key: key,
+      ContentType: 'application/pdf',
+    }), { expiresIn: 600 }); // 10분 유효
+
+    res.json({ uploadUrl, key });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Upload URL 발급 실패.' });
+  }
+});
+
+// ── 노트 등록 (업로드 완료 후 호출) ──
+// POST /api/notes
+router.post('/', authenticate, async (req, res) => {
+  try {
+    const { title, school, department, professor, subject, semester, price, description, file_key } = req.body;
+
+    if (!title || !price || !file_key)
+      return res.status(400).json({ error: '제목, 가격, 파일은 필수예요.' });
+
+    const result = await db.query(`
+      INSERT INTO notes (seller_id, title, school, department, professor, subject, semester, price, description, file_key, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'live')
+      RETURNING *
+    `, [req.user.id, title, school, department, professor, subject, semester, price, description, file_key]);
+
+    res.json({ note: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '서버 오류가 발생했어요.' });
+  }
+});
+
+// ── 내 노트 삭제 (본인만 가능) ──
+// DELETE /api/notes/:id
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT id, seller_id FROM notes WHERE id = $1', [req.params.id]
+    );
+    if (!result.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
+    if (result.rows[0].seller_id !== req.user.id && req.user.role !== 'admin')
+      return res.status(403).json({ error: '삭제 권한이 없어요.' });
+
+    await db.query("UPDATE notes SET status = 'removed' WHERE id = $1", [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: '서버 오류가 발생했어요.' });
+  }
+});
+
+// ── 다운로드 (AWS SDK 직접 스트림 - SSL 핸드셰이크 문제 해결) ──
+// GET /api/notes/:id/download
+router.get('/:id/download', authenticate, async (req, res) => {
+  try {
+    const tx = await db.query(
+      "SELECT id FROM transactions WHERE note_id=$1 AND buyer_id=$2 AND status='completed'",
+      [req.params.id, req.user.id]
+    );
+    if (!tx.rows[0] && req.user.role !== 'admin')
+      return res.status(403).json({ error: '구매 후 다운로드할 수 있어요.' });
+
+    const note = await db.query('SELECT file_key, title FROM notes WHERE id = $1', [req.params.id]);
+    if (!note.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
+
+    const title = note.rows[0].title || 'note';
+    const filename = encodeURIComponent(title) + '.pdf';
+
+    // AWS SDK로 R2에서 직접 파일 가져오기 (SSL 핸드셰이크 문제 없음)
+    const command = new GetObjectCommand({
+      Bucket: process.env.R2_PRIVATE_BUCKET,
+      Key: note.rows[0].file_key,
+    });
+    const r2Response = await r2.send(command);
+
+    // 스트림을 버퍼로 변환
+    const chunks = [];
+    for await (const chunk of r2Response.Body) {
+      chunks.push(chunk);
+    }
+    const fileBuffer = Buffer.concat(chunks);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
+    res.setHeader('Content-Length', fileBuffer.length);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    return res.send(fileBuffer);
+  } catch (err) {
+    console.error('다운로드 오류:', err.message);
+    if (!res.headersSent) {
+      return res.status(500).json({ error: '다운로드 실패: ' + err.message });
+    }
+  }
+});
+
+// ── 리뷰 작성 (구매자만 가능) ──
+// POST /api/notes/:id/reviews
+router.post('/:id/reviews', authenticate, async (req, res) => {
+  try {
+    const { rating, content } = req.body;
+    if (!rating || rating < 1 || rating > 5)
+      return res.status(400).json({ error: '평점은 1~5 사이여야 해요.' });
+
+    // 구매 확인
+    const tx = await db.query(
+      "SELECT id FROM transactions WHERE note_id=$1 AND buyer_id=$2 AND status='completed'",
+      [req.params.id, req.user.id]
+    );
+    if (!tx.rows[0]) return res.status(403).json({ error: '구매한 노트에만 리뷰를 작성할 수 있어요.' });
+
+    // 중복 리뷰 방지
+    const dup = await db.query('SELECT id FROM reviews WHERE note_id=$1 AND buyer_id=$2', [req.params.id, req.user.id]);
+    if (dup.rows[0]) return res.status(400).json({ error: '이미 리뷰를 작성하셨어요.' });
+
+    await db.query(
+      'INSERT INTO reviews (note_id, buyer_id, reviewer_name, rating, content) VALUES ($1,$2,$3,$4,$5)',
+      [req.params.id, req.user.id, req.user.name, rating, content]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: '서버 오류가 발생했어요.' });
+  }
+});
+
+// ── 노트 신고 ──
+// POST /api/notes/:id/report
+router.post('/:id/report', authenticate, async (req, res) => {
+  try {
+    const { type, detail } = req.body;
+    if (!type) return res.status(400).json({ error: '신고 유형을 선택해주세요.' });
+
+    // 중복 신고 방지
+    const dup = await db.query(
+      "SELECT id FROM reports WHERE note_id=$1 AND reporter_id=$2 AND status='pending'",
+      [req.params.id, req.user.id]
+    );
+    if (dup.rows[0]) return res.status(400).json({ error: '이미 신고한 노트예요.' });
+
+    const note = await db.query('SELECT title FROM notes WHERE id = $1', [req.params.id]);
+    await db.query(
+      'INSERT INTO reports (note_id, note_title, reporter_id, reporter_name, type, detail) VALUES ($1,$2,$3,$4,$5,$6)',
+      [req.params.id, note.rows[0]?.title, req.user.id, req.user.name, type, detail]
+    );
+    res.json({ success: true });
+  } catch (err) {
     res.status(500).json({ error: '서버 오류가 발생했어요.' });
   }
 });

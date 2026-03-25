@@ -95,6 +95,44 @@ CREATE TABLE IF NOT EXISTS reports (
 CREATE INDEX IF NOT EXISTS idx_reports_note   ON reports(note_id);
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
 
+-- 스터디 그룹 멤버 테이블
+CREATE TABLE IF NOT EXISTS study_group_members (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  note_id    UUID NOT NULL REFERENCES notes(id),
+  user_id    UUID NOT NULL REFERENCES users(id),
+  contact    VARCHAR(200),
+  joined_at  TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(note_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sgm_note ON study_group_members(note_id);
+CREATE INDEX IF NOT EXISTS idx_sgm_user ON study_group_members(user_id);
+
+-- 성적 인증 배지 테이블
+CREATE TABLE IF NOT EXISTS grade_badges (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  note_id        UUID NOT NULL REFERENCES notes(id),
+  seller_id      UUID NOT NULL REFERENCES users(id),
+  screenshot_key VARCHAR(500),
+  grade          VARCHAR(10) NOT NULL,
+  status         VARCHAR(20) DEFAULT 'pending',    -- 'pending', 'approved', 'rejected'
+  admin_note     TEXT,
+  created_at     TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_gb_note   ON grade_badges(note_id);
+CREATE INDEX IF NOT EXISTS idx_gb_seller ON grade_badges(seller_id);
+
+-- 기출문제 분석 테이블
+CREATE TABLE IF NOT EXISTS exam_analyses (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  note_id    UUID NOT NULL REFERENCES notes(id),
+  analysis   TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ea_note ON exam_analyses(note_id);
+
 -- =====================================================
 -- 관리자 계정 생성
 -- 아래 비밀번호 해시는 "admin1234"의 bcrypt 해시예요

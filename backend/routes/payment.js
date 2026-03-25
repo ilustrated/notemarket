@@ -23,11 +23,15 @@ router.post('/prepare', authenticate, async (req, res) => {
     const fee = Math.round(n.price * 0.1);
     const netAmount = n.price - fee;
 
+    // 판매자 이름 조회
+    const sellerRes = await db.query('SELECT name FROM users WHERE id = $1', [n.seller_id]);
+    const sellerName = sellerRes.rows[0]?.name || '';
+
     // 결제 전 DB에 pending 상태로 저장 (금액 위변조 방지)
     await db.query(`
-      INSERT INTO transactions (order_id, buyer_id, buyer_name, note_id, seller_id, amount, fee, net_amount, status)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'pending')
-    `, [orderId, req.user.id, req.user.name, noteId, n.seller_id, n.price, fee, netAmount]);
+      INSERT INTO transactions (order_id, buyer_id, buyer_name, note_id, seller_id, seller_name, amount, fee, net_amount, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'pending')
+    `, [orderId, req.user.id, req.user.name, noteId, n.seller_id, sellerName, n.price, fee, netAmount]);
 
     if (!process.env.NICEPAY_CLIENT_ID) return res.status(500).json({ error: 'NICEPAY_CLIENT_ID 환경변수가 설정되지 않았어요.' });
 
