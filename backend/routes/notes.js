@@ -1,10 +1,12 @@
 const express  = require('express');
+const https    = require('https');
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const { NodeHttpHandler } = require('@smithy/node-http-handler');
 const { db, authenticate, requireAdmin } = require('../middleware/auth');
 const router = express.Router();
 
-// Cloudflare R2 클라이언트 설정
+// Cloudflare R2 클라이언트 설정 (TLS 1.2 강제 지정으로 핸드셰이크 문제 해결)
 const r2 = new S3Client({
   region: 'auto',
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -13,6 +15,12 @@ const r2 = new S3Client({
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
   },
   forcePathStyle: true,
+  requestHandler: new NodeHttpHandler({
+    httpsAgent: new https.Agent({
+      rejectUnauthorized: false,
+      minVersion: 'TLSv1.2',
+    }),
+  }),
 });
 
 // ── 노트 목록 조회 (검색/필터) ──
@@ -280,7 +288,7 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
-// ── 다운로드 (Presigned URL 반환 - 브라우저가 R2에서 직접 다운로드) ──
+// ── 다운로드 (서버가 R2에서 받아 클라이언트에 전달) ──
 // GET /api/notes/:id/download
 router.get('/:id/download', authenticate, async (req, res) => {
   try {
@@ -294,13 +302,26 @@ router.get('/:id/download', authenticate, async (req, res) => {
     const note = await db.query('SELECT file_key, title FROM notes WHERE id = $1', [req.params.id]);
     if (!note.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
 
-    // Presigned URL 생성 (네트워크 연결 없이 로컬에서 서명만 수행 - SSL 문제 없음)
-    const downloadUrl = await getSignedUrl(r2, new GetObjectCommand({
+    const title = note.rows[0].title || 'note';
+    const filename = encodeURIComponent(title) + '.pdf';
+
+    // SDK로 R2에서 직접 가져오기 (커스텀 TLS 에이전트 적용됨)
+    const r2Response = await r2.send(new GetObjectCommand({
       Bucket: process.env.R2_PRIVATE_BUCKET,
       Key: note.rows[0].file_key,
-    }), { expiresIn: 3600 });
+    }));
 
-    res.json({ downloadUrl });
+    // 스트림을 버퍼로 변환
+    const chunks = [];
+    for await (const chunk of r2Response.Body) {
+      chunks.push(chunk);
+    }
+    const fileBuffer = Buffer.concat(chunks);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
+    res.setHeader('Content-Length', fileBuffer.length);
+    return res.send(fileBuffer);
   } catch (err) {
     console.error('다운로드 오류:', err.message);
     if (!res.headersSent) {

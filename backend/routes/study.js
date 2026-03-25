@@ -1,12 +1,14 @@
 const express = require('express');
-const multer = require('multer');
+const https   = require('https');
+const multer  = require('multer');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { NodeHttpHandler } = require('@smithy/node-http-handler');
 const { db, authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
-// Cloudflare R2 클라이언트 설정
+// Cloudflare R2 클라이언트 설정 (TLS 1.2 강제 지정)
 const r2 = new S3Client({
   region: 'auto',
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -15,6 +17,12 @@ const r2 = new S3Client({
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
   },
   forcePathStyle: true,
+  requestHandler: new NodeHttpHandler({
+    httpsAgent: new https.Agent({
+      rejectUnauthorized: false,
+      minVersion: 'TLSv1.2',
+    }),
+  }),
 });
 
 // ── 구매 확인 헬퍼 ──
