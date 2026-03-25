@@ -288,7 +288,7 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
-// ── 다운로드 (서버가 R2에서 받아 클라이언트에 전달) ──
+// ── 다운로드 (3단계 폴백: fetch → https+ciphers → SDK) ──
 // GET /api/notes/:id/download
 router.get('/:id/download', authenticate, async (req, res) => {
   try {
@@ -305,18 +305,71 @@ router.get('/:id/download', authenticate, async (req, res) => {
     const title = note.rows[0].title || 'note';
     const filename = encodeURIComponent(title) + '.pdf';
 
-    // SDK로 R2에서 직접 가져오기 (커스텀 TLS 에이전트 적용됨)
-    const r2Response = await r2.send(new GetObjectCommand({
+    // Presigned URL 생성 (네트워크 연결 없이 로컬 서명만 수행)
+    const signedUrl = await getSignedUrl(r2, new GetObjectCommand({
       Bucket: process.env.R2_PRIVATE_BUCKET,
       Key: note.rows[0].file_key,
-    }));
+    }), { expiresIn: 3600 });
 
-    // 스트림을 버퍼로 변환
-    const chunks = [];
-    for await (const chunk of r2Response.Body) {
-      chunks.push(chunk);
+    let fileBuffer = null;
+    const errors = [];
+
+    // 방법 1: Node.js 내장 fetch (undici 기반 - 별도 TLS 스택)
+    try {
+      const r2Res = await fetch(signedUrl);
+      if (!r2Res.ok) throw new Error('fetch status ' + r2Res.status);
+      fileBuffer = Buffer.from(await r2Res.arrayBuffer());
+      console.log('다운로드 성공: fetch');
+    } catch (e) {
+      errors.push('fetch: ' + (e.cause?.code || e.message));
     }
-    const fileBuffer = Buffer.concat(chunks);
+
+    // 방법 2: https 모듈 + 모든 시큐리티 레벨 해제
+    if (!fileBuffer) {
+      try {
+        fileBuffer = await new Promise((resolve, reject) => {
+          const agent = new https.Agent({
+            rejectUnauthorized: false,
+            minVersion: 'TLSv1.2',
+            ciphers: 'DEFAULT:@SECLEVEL=0',
+          });
+          https.get(signedUrl, { agent }, (response) => {
+            if (response.statusCode !== 200) {
+              reject(new Error('https status ' + response.statusCode));
+              return;
+            }
+            const chunks = [];
+            response.on('data', c => chunks.push(c));
+            response.on('end', () => resolve(Buffer.concat(chunks)));
+            response.on('error', reject);
+          }).on('error', reject);
+        });
+        console.log('다운로드 성공: https+ciphers');
+      } catch (e) {
+        errors.push('https: ' + (e.code || e.message));
+      }
+    }
+
+    // 방법 3: AWS SDK 직접 (커스텀 TLS 핸들러)
+    if (!fileBuffer) {
+      try {
+        const r2Response = await r2.send(new GetObjectCommand({
+          Bucket: process.env.R2_PRIVATE_BUCKET,
+          Key: note.rows[0].file_key,
+        }));
+        const chunks = [];
+        for await (const chunk of r2Response.Body) chunks.push(chunk);
+        fileBuffer = Buffer.concat(chunks);
+        console.log('다운로드 성공: SDK');
+      } catch (e) {
+        errors.push('sdk: ' + e.message);
+      }
+    }
+
+    if (!fileBuffer) {
+      console.error('모든 다운로드 방법 실패:', errors);
+      return res.status(500).json({ error: '다운로드 실패 (모든 방법 실패)', details: errors });
+    }
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
