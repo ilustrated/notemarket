@@ -614,28 +614,21 @@ function closeNM(e) {
 }
 
 
-// -- 노트 다운로드 (PDF 바이너리 직접 수신) --
+// -- 노트 다운로드 (Presigned URL로 브라우저 직접 다운로드) --
 async function downloadNote(id, title) {
   try {
-    toast('다운로드 중...');
-    const token = localStorage.getItem('nm_token');
-    const res = await fetch(API + '/notes/' + id + '/download', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: '다운로드 실패' }));
-      throw new Error(err.error || '다운로드 실패');
+    toast('다운로드 링크 생성 중...');
+    var data = await api('/notes/' + id + '/download');
+    if (data.downloadUrl) {
+      const a = document.createElement('a');
+      a.href = data.downloadUrl;
+      a.download = (title || 'note') + '.pdf';
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast('다운로드가 시작됐어요!', 'ok');
     }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = (title || 'note') + '.pdf';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast('다운로드 완료!', 'ok');
   } catch(e) {
     toast(e.message, 'err');
   }

@@ -279,7 +279,7 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
-// ── 다운로드 (AWS SDK 직접 스트림 - SSL 핸드셰이크 문제 해결) ──
+// ── 다운로드 (Presigned URL 반환 - 브라우저가 R2에서 직접 다운로드) ──
 // GET /api/notes/:id/download
 router.get('/:id/download', authenticate, async (req, res) => {
   try {
@@ -293,28 +293,13 @@ router.get('/:id/download', authenticate, async (req, res) => {
     const note = await db.query('SELECT file_key, title FROM notes WHERE id = $1', [req.params.id]);
     if (!note.rows[0]) return res.status(404).json({ error: '노트를 찾을 수 없어요.' });
 
-    const title = note.rows[0].title || 'note';
-    const filename = encodeURIComponent(title) + '.pdf';
-
-    // AWS SDK로 R2에서 직접 파일 가져오기 (SSL 핸드셰이크 문제 없음)
-    const command = new GetObjectCommand({
+    // Presigned URL 생성 (네트워크 연결 없이 로컬에서 서명만 수행 - SSL 문제 없음)
+    const downloadUrl = await getSignedUrl(r2, new GetObjectCommand({
       Bucket: process.env.R2_PRIVATE_BUCKET,
       Key: note.rows[0].file_key,
-    });
-    const r2Response = await r2.send(command);
+    }), { expiresIn: 3600 });
 
-    // 스트림을 버퍼로 변환
-    const chunks = [];
-    for await (const chunk of r2Response.Body) {
-      chunks.push(chunk);
-    }
-    const fileBuffer = Buffer.concat(chunks);
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
-    res.setHeader('Content-Length', fileBuffer.length);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    return res.send(fileBuffer);
+    res.json({ downloadUrl });
   } catch (err) {
     console.error('다운로드 오류:', err.message);
     if (!res.headersSent) {
